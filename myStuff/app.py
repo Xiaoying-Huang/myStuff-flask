@@ -1,5 +1,5 @@
 import sqlite3
-from flask import Flask, render_template, request, session
+from flask import Flask, render_template, request, session, redirect
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from flask_login import (
@@ -124,3 +124,20 @@ def register():
 
     else:
         return render_template("register.html")
+
+
+@app.route("/logout")
+@login_required
+def logout():
+    logout_user()
+    return redirect("/")
+
+
+@app.route("/add_stock", methods=["GET", "POST"])
+@login_required
+def add_stock():
+    db = get_db_connection()
+    category = db.execute("SELECT category FROM category").fetchall()
+    length = len(category)
+    if request.method == "GET":
+        return render_template("add_stock.html", category=category, length=length)

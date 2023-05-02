@@ -1,0 +1,16 @@
+{% extends 'layout.html' %}
+{% block title %}Add Stock{% endblock %}
+
+{% block body%}
+<form>
+    <label>Item name</label>
+    <input type='text'>
+    <label>Category</label>
+    <select name="category" id="category">
+        {% for i in range(length) %}
+        <option value="{{category[i]["category"]}}">{{category[i]["category"]}}</option>
+        {% endfor %}
+    </select>
+    <button type="submit">Add stock</button>
+</form>
+{% endblock %} 
