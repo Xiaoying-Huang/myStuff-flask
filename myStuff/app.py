@@ -155,7 +155,7 @@ def add_house():
                 (house_name, current_user.id),
             ).fetchall()
             if house_name_search[0]["COUNT(*)"] > 0:
-                message = f"House name {house_name} already exists! Please enter another house name."
+                message = f"House name '{house_name}' already exists! Please enter another house name."
             # If no duplication of house names under the same user, insert the new house name into database
             else:
                 db.execute(
@@ -163,7 +163,7 @@ def add_house():
                     (house_name, current_user.id),
                 )
                 db.commit()
-                message = "Successfully added a house!"
+                message = f"Successfully added {house_name} as a new house!"
             return render_template(
                 "add_house.html",
                 message_house=message,
@@ -173,6 +173,50 @@ def add_house():
 
 
 # Adding a room
+@app.route("/add_room", methods=["GET", "POST"])
+@login_required
+def add_room():
+    db = get_db_connection()
+    houses = db.execute(
+        "SELECT house_name FROM house WHERE user_id=?", [current_user.id]
+    ).fetchall()
+    house_len = len(houses)
+    if request.method == "POST":
+        # Perform name research of the room. If there is another room within the same house under the same user id, the room cannot be added and an error message should be shown to the user.
+        room_name = request.form.get("room_name")
+        room_name_search = db.execute(
+            "SELECT COUNT(*) FROM room WHERE room_name=? AND house=? AND user_id=?",
+            (room_name, request.form.get("house_select"), current_user.id),
+        ).fetchall()
+        if room_name_search[0]["COUNT(*)"] > 0:
+            message = f'Room name "{room_name}" already exists in {request.form.get("house_select")}! Please enter another room name.'
+        # If name check passes, the new room can be added.
+        else:
+            db.execute(
+                "INSERT INTO room(room_name, user_id, house) VALUES (?, ?, ?)",
+                (room_name, current_user.id, request.form.get("house_select")),
+            )
+            db.commit()
+            message = (
+                f'Successfully added a room in {request.form.get("house_select")}!'
+            )
+        return render_template(
+            "add_room.html",
+            house_len=house_len,
+            houses=houses,
+            message_room=message,
+            instruction="Please select a house in which you're going to add a new room.",
+        )
+    else:
+        return render_template(
+            "add_room.html",
+            house_len=house_len,
+            houses=houses,
+            message_room="",
+            instruction="Please select a house in which you're going to add a new room.",
+        )
+
+
 # Adding a piece of furniture
 # Adding a container
 # Displaying the storage plan
