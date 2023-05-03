@@ -51,12 +51,11 @@ def index():
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
+    db = get_db_connection()
     # Forget any user_id
     session.clear()
-
     # User reached route via POST (as by submitting a form via POST)
     if request.method == "POST":
-        db = get_db_connection()
         # Ensure username was submitted
         if not request.form.get("username"):
             return render_template("error.html", message=f"must provide username")
@@ -93,8 +92,8 @@ def login():
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
+    db = get_db_connection()
     if request.method == "POST":
-        db = get_db_connection()
         username = request.form.get("username")
         password = request.form.get("password")
         confirm_password = request.form.get("confirm_password")
@@ -131,6 +130,52 @@ def register():
 def logout():
     logout_user()
     return redirect("/")
+
+
+@app.route("/storage_plan", methods=["GET", "POST"])
+@login_required
+def storage_plan():
+    db = get_db_connection()
+    if request.method == "POST":
+        pass
+    else:
+        return render_template("storage_plan.html")
+
+
+@app.route("/add_house", methods=["GET", "POST"])
+@login_required
+def add_house():
+    db = get_db_connection()
+    if request.method == "POST":
+        if request.form.get("add_house") == "Add house":
+            house_name = request.form.get("house_name")
+            # Perform a house name search to ensure the input value is unique
+            house_name_search = db.execute(
+                "SELECT COUNT(*) FROM house WHERE house_name = ? AND user_id = ?",
+                (house_name, current_user.id),
+            ).fetchall()
+            if house_name_search[0]["COUNT(*)"] > 0:
+                message = f"House name {house_name} already exists! Please enter another house name."
+            # If no duplication of house names under the same user, insert the new house name into database
+            else:
+                db.execute(
+                    "INSERT INTO house(house_name, user_id) VALUES (?, ?)",
+                    (house_name, current_user.id),
+                )
+                db.commit()
+                message = "Successfully added a house!"
+            return render_template(
+                "add_house.html",
+                message_house=message,
+            )
+    else:
+        return render_template("add_house.html", message_hosue="")
+
+
+# Adding a room
+# Adding a piece of furniture
+# Adding a container
+# Displaying the storage plan
 
 
 @app.route("/add_stock", methods=["GET", "POST"])
