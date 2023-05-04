@@ -1,0 +1,70 @@
+{% extends 'layout.html' %}
+{% block title %}Add furniture{% endblock %}
+
+{% block body%}
+<h2>Add a new piece of furniture</h2>
+
+<div>
+<form method='post'>
+    <label for='house'>Select the house where you want to add a new piece of furniture</label>
+    <br>
+    <select id="house" name='house'>
+        <option></option>
+    </select>
+    <br>
+    <label for='room'>Select the room where you want to add a new piece of furniture</label>
+    <br>
+    <select id="room" name='room'></select>
+    <br>
+    <label for='furniture'>Please enter the name of the furniture you wish to add</label>
+    <br>
+    <input id='furniture' type='text' name='furniture'>
+    <button type="submit">Add furniture</button>
+</form>
+<p>{{message}}</p>
+</div>
+
+<div>
+    <p>Back to <a href='/storage_plan'>storage plan</a></p>
+</div>
+
+<script src="//code.jquery.com/jquery-2.1.1.min.js"></script>
+<script>
+    "use strict";
+
+    var systems = {{ menu|tojson }};
+
+    var form = $('form');
+    var house = $('select#house');
+    var room = $('select#room');
+
+    for (var key in systems) {
+        house.append($('<option/>', {'value': key, 'text': key}));
+    }
+
+    house.change(function(ev) {
+        room.empty();
+        room.append($('<option/>'));
+
+        var rooms = systems[house.val()];
+
+        for (var i in rooms) {
+            room.append($('<option/>', {'value': rooms[i], 'text': rooms[i]}));
+        }
+    }
+    );
+
+    room.change(function(ev){
+        furniture.empty();
+        furniture.append($('<option/>'));
+
+        var furnitures=systems[house.val()][room.val()];
+
+        for (var i in furnitures){
+            furniture.append($('<option/>',{'value':furnitures[i], 'text': rooms[i]}))
+        }
+    });
+</script>
+
+
+{% endblock %} 

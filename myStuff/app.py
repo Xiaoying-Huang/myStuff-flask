@@ -1,4 +1,5 @@
 import sqlite3
+import json
 from flask import Flask, render_template, request, session, redirect
 from werkzeug.security import check_password_hash, generate_password_hash
 
@@ -218,6 +219,117 @@ def add_room():
 
 
 # Adding a piece of furniture
+@app.route("/add_furniture", methods=["GET", "POST"])
+@login_required
+def add_furniture():
+    # First, obtain a list of all the houses and rooms available to display in the chained dropdown list.
+    db = get_db_connection()
+
+    house_names = db.execute(
+        "SELECT house_name from house WHERE user_id = ?", [current_user.id]
+    ).fetchall()
+
+    house_names_list = []
+    for i in range(len(house_names)):
+        house_names_list.append(house_names[i]["house_name"])
+
+    room_names_list = {}
+    for house in house_names_list:
+        room_list = []
+        room_names = db.execute(
+            "SELECT house, room_name FROM room WHERE user_id = ? AND house = ?",
+            (current_user.id, house),
+        ).fetchall()
+        for i in range(len(room_names)):
+            room_list.append(room_names[i]["room_name"])
+        room_names_list[house] = room_list
+    # room_names_list is to be passed to html
+
+    if request.method == "POST":
+        # Perform name research of the new furniture. If there is another piece of furniture within the same room of the same house under the same user id, the furniture cannot be added and an error message should be shown to the user.
+        furniture_name = request.form.get("furniture")
+        furniture_name_search = db.execute(
+            "SELECT COUNT(*) FROM furniture WHERE furniture_name=? AND house=? AND room=? AND user_id=?",
+            (
+                furniture_name,
+                request.form.get("house"),
+                request.form.get("room"),
+                current_user.id,
+            ),
+        ).fetchall()
+        if furniture_name_search[0]["COUNT(*)"] > 0:
+            message = f'Furniture name "{furniture_name}" already exists in "{request.form.get("room")}" of "{request.form.get("house")}"! Please enter another furniture name.'
+        # if no duplication of names are found, a new entry of furniture will be inserted to the furniture table of myStuff.db.
+        else:
+            db.execute(
+                "INSERT INTO furniture(furniture_name, user_id, house, room) VALUES (?, ?, ?,?)",
+                (
+                    furniture_name,
+                    current_user.id,
+                    request.form.get("house"),
+                    request.form.get("room"),
+                ),
+            )
+            db.commit()
+            message = f'You have successfully added "{furniture_name}" in the "{request.form.get("room")}" of "{request.form.get("house")}"'
+        return render_template(
+            "add_furniture.html", menu=room_names_list, message=message
+        )
+
+    else:
+        return render_template("add_furniture.html", menu=room_names_list, message="")
+
+
+@app.route("/test")
+@login_required
+def test():
+    db = get_db_connection()
+    # all house names
+    house_names = db.execute(
+        "SELECT house_name from house WHERE user_id = ?", [current_user.id]
+    ).fetchall()
+
+    house_names_list = []
+    for i in range(len(house_names)):
+        house_names_list.append(house_names[i]["house_name"])
+    # print(house_names_list)
+
+    room_names_list = {}
+    for house in house_names_list:
+        room_list = []
+        room_names = db.execute(
+            "SELECT house, room_name FROM room WHERE user_id = ? AND house = ?",
+            (current_user.id, house),
+        ).fetchall()
+        for i in range(len(room_names)):
+            room_list.append(room_names[i]["room_name"])
+        room_names_list[house] = room_list
+    homesandrooms = {
+        "Home": ["Master room", "Guest room", "Baby room", "Bedroom2"],
+        "Home2": ["Bedroom1", "Living room", "Bedroom2"],
+        "Home3": [],
+    }
+    print(room_names_list)
+    # print(rooms)
+
+    furniture_names_list = {}
+    for key in room_names_list.keys():
+        furniture_names_list[key] = {}
+        for i in range(len(room_names_list[key])):
+            furniture_names_list[key][room_names_list[key][i]] = {}
+            furniture_list = []
+            furniture_names = db.execute(
+                "SELECT house, room, furniture_name FROM furniture WHERE user_id =? AND house = ? AND room =?",
+                (current_user.id, key, room_names_list[key][i]),
+            ).fetchall()
+            for j in range(len(furniture_names)):
+                furniture_list.append(furniture_names[j]["furniture_name"])
+            furniture_names_list[key][room_names_list[key][i]] = furniture_list
+    print(furniture_names_list)
+
+    return render_template("test.html", homesandrooms=homesandrooms)
+
+
 # Adding a container
 # Displaying the storage plan
 
