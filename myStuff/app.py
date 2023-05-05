@@ -198,9 +198,7 @@ def add_room():
                 (room_name, current_user.id, request.form.get("house_select")),
             )
             db.commit()
-            message = (
-                f'Successfully added a room in {request.form.get("house_select")}!'
-            )
+            message = f'Successfully added "{room_name}" in "{request.form.get("house_select")}"!'
         return render_template(
             "add_room.html",
             house_len=house_len,
@@ -278,6 +276,49 @@ def add_furniture():
 
     else:
         return render_template("add_furniture.html", menu=room_names_list, message="")
+
+
+@app.route("/add_container", methods=["GET", "POST"])
+@login_required
+def add_container():
+    # First, obtain a list of all the houses and rooms available to display in the chained dropdown list.
+    db = get_db_connection()
+
+    house_names = db.execute(
+        "SELECT house_name from house WHERE user_id = ?", [current_user.id]
+    ).fetchall()
+
+    house_names_list = []
+    for i in range(len(house_names)):
+        house_names_list.append(house_names[i]["house_name"])
+
+    room_names_list = {}
+    for house in house_names_list:
+        room_list = []
+        room_names = db.execute(
+            "SELECT house, room_name FROM room WHERE user_id = ? AND house = ?",
+            (current_user.id, house),
+        ).fetchall()
+        for i in range(len(room_names)):
+            room_list.append(room_names[i]["room_name"])
+        room_names_list[house] = room_list
+
+    furniture_names_list = {}
+    for key in room_names_list.keys():
+        furniture_names_list[key] = {}
+        for i in range(len(room_names_list[key])):
+            furniture_names_list[key][room_names_list[key][i]] = {}
+            furniture_list = []
+            furniture_names = db.execute(
+                "SELECT house, room, furniture_name FROM furniture WHERE user_id =? AND house = ? AND room =?",
+                (current_user.id, key, room_names_list[key][i]),
+            ).fetchall()
+            for j in range(len(furniture_names)):
+                furniture_list.append(furniture_names[j]["furniture_name"])
+            furniture_names_list[key][room_names_list[key][i]] = furniture_list
+    print(furniture_names_list)
+
+    return render_template("add_container.html", menu=furniture_names_list)
 
 
 @app.route("/test")

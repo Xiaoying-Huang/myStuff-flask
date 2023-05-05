@@ -54,16 +54,6 @@
     }
     );
 
-    room.change(function(ev){
-        furniture.empty();
-        furniture.append($('<option/>'));
-
-        var furnitures=systems[house.val()][room.val()];
-
-        for (var i in furnitures){
-            furniture.append($('<option/>',{'value':furnitures[i], 'text': rooms[i]}))
-        }
-    });
 </script>
 
 
