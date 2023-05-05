@@ -42,7 +42,6 @@
     var house = $('select#house');
     var room = $('select#room');
     var furniture=$('select#furniture');
-    var container=$('select#container');
 
     for (var key in systems) {
         house.append($('<option/>', {'value': key, 'text': key}));
@@ -54,8 +53,8 @@
 
         var rooms = systems[house.val()];
 
-        for (var i in rooms) {
-            room.append($('<option/>', {'value': rooms[i], 'text': rooms[i]}));
+        for (var key in rooms) {
+            room.append($('<option/>', {'value': key, 'text': key}));
         }
     }
     );
@@ -71,16 +70,6 @@
         }
     });
 
-    furniture.change(function(ev){
-        container.empty();
-        container.append($('<option/>'));
-
-        var containers=systems[house.val()][room.val()][furniture.val()];
-
-        for (var i in containers){
-            container.append($('<option/>', {'value':containers[i], 'text':containers[i]}))
-        }
-    })
 </script>
 
 
