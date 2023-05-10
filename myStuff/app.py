@@ -138,7 +138,58 @@ def logout():
 def storage_plan():
     # First, obtain a list of all the houses, rooms, furniture and containers.
     db = get_db_connection()
-    all_containers = db.execute("SELECT * FROM container").fetchall()
+    rows = db.execute(
+        "SELECT house.house_id, house.house_name, room.room_id, room.room_name, furniture.furniture_id, furniture.furniture_name, container.container_id, container.container_name FROM house LEFT JOIN room ON house.house_id = room.house_id LEFT JOIN furniture ON room.room_id = furniture.room_id LEFT JOIN container ON furniture.furniture_id = container.furniture_id"
+    ).fetchall()
+
+    containers_dict = {}
+    for row in rows:
+        (
+            house_id,
+            house_name,
+            room_id,
+            room_name,
+            furniture_id,
+            furniture_name,
+            container_id,
+            container_name,
+        ) = row
+
+        # create container dictionary
+        if house_name not in containers_dict:
+            containers_dict[house_name] = {"house_id": house_id, "rooms": {}}
+
+        if room_name == None:
+            continue
+        elif room_name not in containers_dict[house_name]["rooms"]:
+            containers_dict[house_name]["rooms"][room_name] = {
+                "room_id": room_id,
+                "furniture": {},
+            }
+
+        if furniture_name == None:
+            continue
+        elif (
+            furniture_name
+            not in containers_dict[house_name]["rooms"][room_name]["furniture"]
+        ):
+            containers_dict[house_name]["rooms"][room_name]["furniture"][
+                furniture_name
+            ] = {"furniture_id": furniture_id, "containers": {}}
+
+        if container_name == None:
+            continue
+        elif (
+            container_name
+            not in containers_dict[house_name]["rooms"][room_name]["furniture"][
+                furniture_name
+            ]["containers"]
+        ):
+            containers_dict[house_name]["rooms"][room_name]["furniture"][
+                furniture_name
+            ]["containers"][container_name] = container_id
+    print(containers_dict)
+
     return render_template("storage_plan.html")
 
 
@@ -316,7 +367,7 @@ def add_container():
         # Create furniture dictionary
         if house_name not in furniture_dict:
             furniture_dict[house_name] = {"house_id": house_id, "rooms": {}}
-        if room_name not in furniture_dict[house_name]:
+        if room_name not in furniture_dict[house_name]["rooms"]:
             furniture_dict[house_name]["rooms"][room_name] = {
                 "room_id": room_id,
                 "furniture": {},
