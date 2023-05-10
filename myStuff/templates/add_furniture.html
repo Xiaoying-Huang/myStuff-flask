@@ -39,17 +39,18 @@
     var room = $('select#room');
 
     for (var key in systems) {
-        house.append($('<option/>', {'value': key, 'text': key}));
+        var name=systems[key]["house_name"];
+        house.append($('<option/>', {'value': key, 'text': name}));
     }
 
     house.change(function(ev) {
         room.empty();
         room.append($('<option/>'));
 
-        var rooms = systems[house.val()];
+        var rooms = systems[house.val()]["rooms"];
 
-        for (var i in rooms) {
-            room.append($('<option/>', {'value': rooms[i], 'text': rooms[i]}));
+        for (var key in rooms) {
+            room.append($('<option/>', {'value': key, 'text': rooms[key]}));
         }
     }
     );

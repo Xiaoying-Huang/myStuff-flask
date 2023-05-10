@@ -133,14 +133,13 @@ def logout():
     return redirect("/")
 
 
-@app.route("/storage_plan", methods=["GET", "POST"])
+@app.route("/storage_plan")
 @login_required
 def storage_plan():
+    # First, obtain a list of all the houses, rooms, furniture and containers.
     db = get_db_connection()
-    if request.method == "POST":
-        pass
-    else:
-        return render_template("storage_plan.html")
+    all_containers = db.execute("SELECT * FROM container").fetchall()
+    return render_template("storage_plan.html")
 
 
 @app.route("/add_house", methods=["GET", "POST"])
@@ -150,6 +149,13 @@ def add_house():
     if request.method == "POST":
         if request.form.get("add_house") == "Add house":
             house_name = request.form.get("house_name")
+
+            # Ensure house name was submitted
+            if not request.form.get("house_name"):
+                return render_template(
+                    "add_house.html", message_house="House name should not be empty!"
+                )
+
             # Perform a house name search to ensure the input value is unique
             house_name_search = db.execute(
                 "SELECT COUNT(*) FROM house WHERE house_name = ? AND user_id = ?",
@@ -179,32 +185,45 @@ def add_house():
 def add_room():
     db = get_db_connection()
     houses = db.execute(
-        "SELECT house_name FROM house WHERE user_id=?", [current_user.id]
+        "SELECT house_name, house_id FROM house WHERE user_id=?", [current_user.id]
     ).fetchall()
     house_len = len(houses)
     if request.method == "POST":
-        # Perform name research of the room. If there is another room within the same house under the same user id, the room cannot be added and an error message should be shown to the user.
         room_name = request.form.get("room_name")
+        selected_house = db.execute(
+            "SELECT house_name FROM house WHERE house_id = ?",
+            [request.form.get("house_select")],
+        ).fetchall()[0]["house_name"]
+        # Ensure room name was submitted
+        if not request.form.get("room_name"):
+            return render_template(
+                "add_room.html",
+                message_room="Room name should not be empty!",
+                house_len=house_len,
+                houses=houses,
+            )
+
+        # Perform name research of the room. If there is another room within the same house under the same user id, the room cannot be added and an error message should be shown to the user.
         room_name_search = db.execute(
-            "SELECT COUNT(*) FROM room WHERE room_name=? AND house=? AND user_id=?",
-            (room_name, request.form.get("house_select"), current_user.id),
+            "SELECT COUNT(*) FROM room WHERE room_name=? AND house_id=?",
+            (room_name, request.form.get("house_select")),
         ).fetchall()
         if room_name_search[0]["COUNT(*)"] > 0:
-            message = f'Room name "{room_name}" already exists in {request.form.get("house_select")}! Please enter another room name.'
+            message = f'Room name "{room_name}" already exists in {selected_house}! Please enter another room name.'
+
         # If name check passes, the new room can be added.
         else:
             db.execute(
-                "INSERT INTO room(room_name, user_id, house) VALUES (?, ?, ?)",
-                (room_name, current_user.id, request.form.get("house_select")),
+                "INSERT INTO room(room_name, house_id) VALUES (?, ?)",
+                (room_name, request.form.get("house_select")),
             )
             db.commit()
-            message = f'Successfully added "{room_name}" in "{request.form.get("house_select")}"!'
+            message = f'Successfully added "{room_name}" in "{selected_house}"!'
         return render_template(
             "add_room.html",
             house_len=house_len,
             houses=houses,
             message_room=message,
-            instruction="Please select a house in which you're going to add a new room.",
         )
     else:
         return render_template(
@@ -212,7 +231,6 @@ def add_room():
             house_len=house_len,
             houses=houses,
             message_room="",
-            instruction="Please select a house in which you're going to add a new room.",
         )
 
 
@@ -223,59 +241,60 @@ def add_furniture():
     # First, obtain a list of all the houses and rooms available to display in the chained dropdown list.
     db = get_db_connection()
 
-    house_names = db.execute(
-        "SELECT house_name from house WHERE user_id = ?", [current_user.id]
+    rooms_dict = {}
+    rows = db.execute(
+        "SELECT house.house_id, house.house_name, room.room_id, room.room_name FROM house JOIN room ON house.house_id = room.house_id ORDER BY house.house_id"
     ).fetchall()
 
-    house_names_list = []
-    for i in range(len(house_names)):
-        house_names_list.append(house_names[i]["house_name"])
+    for row in rows:
+        house_id, house_name, room_id, room_name = row
 
-    room_names_list = {}
-    for house in house_names_list:
-        room_list = []
-        room_names = db.execute(
-            "SELECT house, room_name FROM room WHERE user_id = ? AND house = ?",
-            (current_user.id, house),
-        ).fetchall()
-        for i in range(len(room_names)):
-            room_list.append(room_names[i]["room_name"])
-        room_names_list[house] = room_list
-    # room_names_list is to be passed to html
+        # Create rooms dictionary
+        if house_id not in rooms_dict:
+            rooms_dict[house_id] = {"house_name": house_name, "rooms": {}}
+        if room_id not in rooms_dict[house_id]["rooms"]:
+            rooms_dict[house_id]["rooms"][room_id] = room_name
+
+    # rooms_dict is to be passed to html
 
     if request.method == "POST":
+        # Ensure furniture name was submitted:
+        if not request.form.get("furniture"):
+            return render_template(
+                "add_furniture.html",
+                message="Furniture name should not be empty!",
+                menu=rooms_dict,
+            )
+
         # Perform name research of the new furniture. If there is another piece of furniture within the same room of the same house under the same user id, the furniture cannot be added and an error message should be shown to the user.
         furniture_name = request.form.get("furniture")
         furniture_name_search = db.execute(
-            "SELECT COUNT(*) FROM furniture WHERE furniture_name=? AND house=? AND room=? AND user_id=?",
-            (
-                furniture_name,
-                request.form.get("house"),
-                request.form.get("room"),
-                current_user.id,
-            ),
+            "SELECT COUNT(*) FROM furniture WHERE furniture_name=? AND room_id=?",
+            (furniture_name, request.form.get("room")),
         ).fetchall()
+
+        selected_house = rooms_dict[int(request.form.get("house"))]["house_name"]
+        selected_room = rooms_dict[int(request.form.get("house"))]["rooms"][
+            int(request.form.get("room"))
+        ]
+
         if furniture_name_search[0]["COUNT(*)"] > 0:
-            message = f'Furniture name "{furniture_name}" already exists in "{request.form.get("room")}" of "{request.form.get("house")}"! Please enter another furniture name.'
+            message = f'Furniture name "{furniture_name}" already exists in "{selected_room}" of "{selected_house}"! Please enter another furniture name.'
         # if no duplication of names are found, a new entry of furniture will be inserted to the furniture table of myStuff.db.
         else:
             db.execute(
-                "INSERT INTO furniture(furniture_name, user_id, house, room) VALUES (?, ?, ?,?)",
+                "INSERT INTO furniture(furniture_name, room_id) VALUES (?, ?)",
                 (
                     furniture_name,
-                    current_user.id,
-                    request.form.get("house"),
                     request.form.get("room"),
                 ),
             )
             db.commit()
-            message = f'You have successfully added "{furniture_name}" in the "{request.form.get("room")}" of "{request.form.get("house")}"'
-        return render_template(
-            "add_furniture.html", menu=room_names_list, message=message
-        )
+            message = f'You have successfully added "{furniture_name}" in the "{selected_room}" of "{selected_house}"'
+        return render_template("add_furniture.html", menu=rooms_dict, message=message)
 
     else:
-        return render_template("add_furniture.html", menu=room_names_list, message="")
+        return render_template("add_furniture.html", menu=rooms_dict, message="")
 
 
 # Adding a container
@@ -351,14 +370,10 @@ def add_container():
             "add_container.html", menu=furniture_names_list, message=message
         )
 
-        pass
     else:
         return render_template(
             "add_container.html", menu=furniture_names_list, message=""
         )
-
-
-# Displaying the storage plan
 
 
 @app.route("/add_stock", methods=["GET", "POST"])
@@ -366,6 +381,6 @@ def add_container():
 def add_stock():
     db = get_db_connection()
     category = db.execute("SELECT category FROM category").fetchall()
-    length = len(category)
+    cat_len = len(category)
     if request.method == "GET":
-        return render_template("add_stock.html", category=category, length=length)
+        return render_template("add_stock.html", category=category, cat_len=cat_len)

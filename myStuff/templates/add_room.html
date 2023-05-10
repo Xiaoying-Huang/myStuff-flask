@@ -4,12 +4,13 @@
 {% block body%}
 <div>
     <h2>Add a new room</h2>
-    <p>{{instruction}}</p>
+    <p>Please select a house in which you're going to add a new room.</p>
     <form method='post'>
         <label for='house_name'>House name</label>
-        <select name='house_select'>
+        <select name='house_select' required>
+            <option value="" disabled selected>Select a house</option>
             {% for i in range(house_len)%}
-            <option value='{{houses[i]["house_name"]}}'>{{houses[i]["house_name"]}}</option>
+            <option value='{{houses[i]["house_id"]}}'>{{houses[i]["house_name"]}}</option>
             {% endfor %}
         </select>
         <label for='room_name'>Room name</label>
