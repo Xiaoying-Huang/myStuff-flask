@@ -190,7 +190,7 @@ def storage_plan():
             ]["containers"][container_name] = container_id
     print(containers_dict)
 
-    return render_template("storage_plan.html")
+    return render_template("storage_plan.html", menu=containers_dict)
 
 
 @app.route("/add_house", methods=["GET", "POST"])

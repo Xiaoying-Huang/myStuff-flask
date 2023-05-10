@@ -10,9 +10,37 @@
 </div>
 <div>
     <h2>Current Storage Plan</h2>
+    <ul id="house">
+        {% for house, house_data in menu.items() %}
+            <li>{{ house }}</li>
+            {% if house_data.rooms %}
+                <ul id="room">
+                    {% for room, room_data in house_data.rooms.items() %}
+                        <li>{{ room }}</li>
+                        {% if room_data.furniture %}
+                            <ul id="furniture">
+                                {% for furniture, furniture_data in room_data.furniture.items() %}
+                                    <li>{{ furniture }}</li>
+                                    {% if furniture_data.containers %}
+                                        <ul id="container">
+                                            {% for container, container_data in furniture_data.containers.items() %}
+                                                <li>{{ container }}</li>
+                                            {% endfor %}
+                                        </ul>
+                                    {% endif %}
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        {% endfor %}
+    </ul>
+    
 </div>
 <div>
     <p>Back to <a href='/'>dashboard</a></p>
 </div>
+
 
 {% endblock %} 
