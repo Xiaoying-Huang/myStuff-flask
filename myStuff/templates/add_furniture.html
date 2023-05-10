@@ -8,13 +8,13 @@
 <form method='post'>
     <label for='house'>Select the house where you want to add a new piece of furniture</label>
     <br>
-    <select id="house" name='house'>
+    <select id="house" name='house' required>
         <option></option>
     </select>
     <br>
     <label for='room'>Select the room where you want to add a new piece of furniture</label>
     <br>
-    <select id="room" name='room'></select>
+    <select id="room" name='room' required></select>
     <br>
     <label for='furniture'>Please enter the name of the furniture you wish to add</label>
     <br>
@@ -39,8 +39,7 @@
     var room = $('select#room');
 
     for (var key in systems) {
-        var name=systems[key]["house_name"];
-        house.append($('<option/>', {'value': key, 'text': name}));
+        house.append($('<option/>', {'value': key, 'text': key}));
     }
 
     house.change(function(ev) {

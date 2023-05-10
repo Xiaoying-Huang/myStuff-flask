@@ -250,10 +250,10 @@ def add_furniture():
         house_id, house_name, room_id, room_name = row
 
         # Create rooms dictionary
-        if house_id not in rooms_dict:
-            rooms_dict[house_id] = {"house_name": house_name, "rooms": {}}
-        if room_id not in rooms_dict[house_id]["rooms"]:
-            rooms_dict[house_id]["rooms"][room_id] = room_name
+        if house_name not in rooms_dict:
+            rooms_dict[house_name] = {"house_id": house_id, "rooms": {}}
+        if room_id not in rooms_dict[house_name]["rooms"]:
+            rooms_dict[house_name]["rooms"][room_id] = room_name
 
     # rooms_dict is to be passed to html
 
@@ -273,8 +273,8 @@ def add_furniture():
             (furniture_name, request.form.get("room")),
         ).fetchall()
 
-        selected_house = rooms_dict[int(request.form.get("house"))]["house_name"]
-        selected_room = rooms_dict[int(request.form.get("house"))]["rooms"][
+        selected_house = request.form.get("house")
+        selected_room = rooms_dict[request.form.get("house")]["rooms"][
             int(request.form.get("room"))
         ]
 
@@ -304,76 +304,69 @@ def add_container():
     # First, obtain a list of all the houses and rooms available to display in the chained dropdown list.
     db = get_db_connection()
 
-    house_names = db.execute(
-        "SELECT house_name from house WHERE user_id = ?", [current_user.id]
+    furniture_dict = {}
+
+    rows = db.execute(
+        "SELECT house.house_id, house.house_name, room.room_id, room.room_name, furniture.furniture_id, furniture.furniture_name FROM house JOIN room ON house.house_id = room.house_id JOIN furniture ON room.room_id = furniture.room_id"
     ).fetchall()
 
-    house_names_list = []
-    for i in range(len(house_names)):
-        house_names_list.append(house_names[i]["house_name"])
+    for row in rows:
+        house_id, house_name, room_id, room_name, furniture_id, furniture_name = row
 
-    room_names_list = {}
-    for house in house_names_list:
-        room_list = []
-        room_names = db.execute(
-            "SELECT house, room_name FROM room WHERE user_id = ? AND house = ?",
-            (current_user.id, house),
-        ).fetchall()
-        for i in range(len(room_names)):
-            room_list.append(room_names[i]["room_name"])
-        room_names_list[house] = room_list
+        # Create furniture dictionary
+        if house_name not in furniture_dict:
+            furniture_dict[house_name] = {"house_id": house_id, "rooms": {}}
+        if room_name not in furniture_dict[house_name]:
+            furniture_dict[house_name]["rooms"][room_name] = {
+                "room_id": room_id,
+                "furniture": {},
+            }
+        if (
+            furniture_id
+            not in furniture_dict[house_name]["rooms"][room_name]["furniture"]
+        ):
+            furniture_dict[house_name]["rooms"][room_name]["furniture"][
+                furniture_id
+            ] = furniture_name
 
-    furniture_names_list = {}
-    for key in room_names_list.keys():
-        furniture_names_list[key] = {}
-        for i in range(len(room_names_list[key])):
-            furniture_names_list[key][room_names_list[key][i]] = {}
-            furniture_list = []
-            furniture_names = db.execute(
-                "SELECT house, room, furniture_name FROM furniture WHERE user_id =? AND house = ? AND room =?",
-                (current_user.id, key, room_names_list[key][i]),
-            ).fetchall()
-            for j in range(len(furniture_names)):
-                furniture_list.append(furniture_names[j]["furniture_name"])
-            furniture_names_list[key][room_names_list[key][i]] = furniture_list
+    # furniture_dict to be passed to html
 
     if request.method == "POST":
+        # Ensure container name was submitted:
+        if not request.form.get("container"):
+            return render_template(
+                "add_container.html",
+                message="Container name should not be empty!",
+                menu=furniture_dict,
+            )
+
         # Perform name research of the new container. If there is another container within the same furniture, same room of the same house under the same user id, the furniture cannot be added and an error message should be shown to the user.
         container_name = request.form.get("container")
         container_name_search = db.execute(
-            "SELECT COUNT(*) FROM container WHERE container_name=? AND furniture=? AND house=? AND room=? AND user_id=?",
-            (
-                container_name,
-                request.form.get("furniture"),
-                request.form.get("house"),
-                request.form.get("room"),
-                current_user.id,
-            ),
+            "SELECT COUNT(*) FROM container WHERE container_name=? AND furniture_id=?",
+            (container_name, request.form.get("furniture")),
         ).fetchall()
+
+        selected_furniture = furniture_dict[request.form.get("house")]["rooms"][
+            request.form.get("room")
+        ]["furniture"][int(request.form.get("furniture"))]
+
         if container_name_search[0]["COUNT(*)"] > 0:
-            message = f'Container name "{container_name}" already exists in "{request.form.get("furniture")}, in the room "{request.form.get("room")}" of house "{request.form.get("house")}"! Please enter another container name.'
+            message = f'Container name "{container_name}" already exists in "{selected_furniture}, in the room "{request.form.get("room")}" of house "{request.form.get("house")}"! Please enter another container name.'
         # if no duplication of names are found, a new entry of furniture will be inserted to the furniture table of myStuff.db.
         else:
             db.execute(
-                "INSERT INTO container(container_name, user_id, house, room, furniture) VALUES (?,?,?,?,?)",
-                (
-                    container_name,
-                    current_user.id,
-                    request.form.get("house"),
-                    request.form.get("room"),
-                    request.form.get("furniture"),
-                ),
+                "INSERT INTO container(container_name, furniture_id) VALUES (?,?)",
+                (container_name, request.form.get("furniture")),
             )
             db.commit()
-            message = f'You have successfully added "{container_name}" to the furniture "{request.form.get("furniture")}", in the room "{request.form.get("room")}" of house "{request.form.get("house")}".'
+            message = f'You have successfully added "{container_name}" to the furniture "{selected_furniture}", in the room "{request.form.get("room")}" of house "{request.form.get("house")}".'
         return render_template(
-            "add_container.html", menu=furniture_names_list, message=message
+            "add_container.html", menu=furniture_dict, message=message
         )
 
     else:
-        return render_template(
-            "add_container.html", menu=furniture_names_list, message=""
-        )
+        return render_template("add_container.html", menu=furniture_dict, message="")
 
 
 @app.route("/add_stock", methods=["GET", "POST"])

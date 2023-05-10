@@ -8,17 +8,17 @@
 <form method='post'>
     <label for='house'>Select the house where you want to add a new container</label>
     <br>
-    <select id="house" name='house'>
+    <select id="house" name='house' required>
         <option></option>
     </select>
     <br>
     <label for='room'>Select the room where you want to add a new container</label>
     <br>
-    <select id="room" name='room'></select>
+    <select id="room" name='room' required></select>
     <br>
     <label for='furniture'>Select the furniture where you want to put the new container</label>
     <br>
-    <select id="furniture" name='furniture'></select>
+    <select id="furniture" name='furniture' required></select>
     <br>
     <label for='container'>Please enter the name of the container you wish to add</label>
     <br>
@@ -51,7 +51,7 @@
         room.empty();
         room.append($('<option/>'));
 
-        var rooms = systems[house.val()];
+        var rooms = systems[house.val()]["rooms"];
 
         for (var key in rooms) {
             room.append($('<option/>', {'value': key, 'text': key}));
@@ -63,12 +63,14 @@
         furniture.empty();
         furniture.append($('<option/>'));
 
-        var furnitures=systems[house.val()][room.val()];
+        var furnitures=systems[house.val()]["rooms"][room.val()]["furniture"];
 
-        for (var i in furnitures){
-            furniture.append($('<option/>',{'value':furnitures[i], 'text': furnitures[i]}))
+        for (var key in furnitures){
+            name=furnitures[key]
+            furniture.append($('<option/>',{'value': key, 'text': name}))
         }
     });
+    
 
 </script>
 
