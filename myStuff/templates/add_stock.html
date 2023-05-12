@@ -1,16 +1,70 @@
 {% extends 'layout.html' %}
 {% block title %}Add Stock{% endblock %}
+{% block style %}
+<style>
+    #addCategory {
+        display: none;
+    }
+</style>
+
+{% endblock %}
 
 {% block body%}
-<form>
-    <label>Item name</label>
-    <input type='text'>
-    <label>Category</label>
-    <select name="category" id="category">
-        {% for i in range(length) %}
-        <option value="{{category[i]["category"]}}">{{category[i]["category"]}}</option>
-        {% endfor %}
-    </select>
-    <button type="submit">Add stock</button>
-</form>
-{% endblock %} 
+<div id='addSTock'>
+    <form id='stock_info' method='post'>
+        <label for='stock_name'>Stock name</label>
+        <input type='text' name='stock_name' required>
+        <br>
+        <label for='quantity'>Quantity</label>
+        <input type='number' min='1' name="quantity" id="quantity" placeholder='Please enter quantity greater than 1'>
+        <br>
+        <label for='note'>Note</label>
+        <input type='text' name='note' id="note" placeholder='Additional notes for the stock item'>
+        <br>
+        <label>Category</label>
+        <br>
+        <select name="category" id="category_select" required onchange="toggleNewCategory()">
+            <option disabled selected>Select stock category</option>
+            {% for i in range(cat_len) %}
+            <option value='{{category[i]["category_id"]}}'>{{category[i]["category"]}}</option>
+            {% endfor %}
+            <option value='newCategory'>Add new categories</option>
+        </select>
+        <br>
+        <button type="submit" name='stock_submit'>Add stock</button>
+    </form>
+</div>
+<div id='addCategory'>
+    <form id='new_cat' method='post'>
+        <label for='category_name'>New Category Name</label>
+        <input type='text' name='category_name' required>
+        <br>
+        <label for='description'>Description</label>
+        <input type='text' name='description' required>
+        <br>
+        <button type='submit' name='cat_submit'>Add new category</button>
+    </form>
+</div>
+
+<p>{{message}}</p>
+
+<div>
+    <p>Back to <a href='/storage_plan'>storage plan</a></p>
+</div>
+
+<script>
+
+    function toggleNewCategory() {
+        var categorySelect = document.getElementById("category_select");
+        var addCategory = document.getElementById("addCategory");
+
+        if (categorySelect.value === "newCategory") {
+            addCategory.style.display = "block";
+        } else {
+            addCategory.style.display = "none";
+        }
+    }
+
+</script>
+
+{% endblock %}

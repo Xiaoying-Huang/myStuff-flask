@@ -424,7 +424,90 @@ def add_container():
 @login_required
 def add_stock():
     db = get_db_connection()
-    category = db.execute("SELECT category FROM category").fetchall()
+    category = db.execute("SELECT category, category_id FROM category").fetchall()
     cat_len = len(category)
+    for i in range(cat_len):
+        print(category[i]["category_id"])
+        print(category[i]["category"])
+
+    if request.method == "POST":
+        # add category
+        if "cat_submit" in request.form:
+            # name check
+            cat_name_search = db.execute(
+                "SELECT COUNT(*) FROM category WHERE category = ?",
+                [request.form.get("category_name")],
+            ).fetchall()
+            if cat_name_search[0]["COUNT(*)"] > 0:
+                return render_template(
+                    "add_stock.html",
+                    category=category,
+                    cat_len=cat_len,
+                    message=f'Category "{request.form.get("category_name")}" already exists. Please enter another category.',
+                )
+
+            else:
+                db.execute(
+                    "INSERT INTO category (category, description, user_id) VALUES (?, ?, ?)",
+                    (
+                        request.form.get("category_name"),
+                        request.form.get("description"),
+                        current_user.id,
+                    ),
+                )
+                db.commit()
+                category = db.execute(
+                    "SELECT category, category_id FROM category"
+                ).fetchall()
+                cat_len = len(category)
+                return render_template(
+                    "add_stock.html",
+                    category=category,
+                    cat_len=cat_len,
+                    message=f'Successfully added a new stock category "{request.form.get("category_name")}"',
+                )
+
+        # add new stock items
+        if "stock_submit" in request.form:
+            # Duplicate name check
+            stock_name_search = db.execute(
+                "SELECT COUNT(*) FROM stock WHERE stock_name = ?",
+                [request.form.get("stock_name")],
+            ).fetchall()
+
+            if stock_name_search[0]["COUNT(*)"] > 0:
+                return render_template(
+                    "add_stock.html",
+                    category=category,
+                    cat_len=cat_len,
+                    message_stock=f'Stock item named "{request.form.get("stock_name")}" already exists. Please choose another name or simply update the quantity of existing item.',
+                )
+            else:
+                db.execute(
+                    "INSERT INTO stock(stock_name, category_id, quantity, note, user_id) VALUES(?,?,?,?,?)",
+                    (
+                        request.form.get("stock_name"),
+                        request.form.get("category"),
+                        request.form.get("quantity"),
+                        request.form.get("note"),
+                        current_user.id,
+                    ),
+                )
+                db.commit()
+                category = db.execute(
+                    "SELECT category, category_id FROM category"
+                ).fetchall()
+                cat_len = len(category)
+                return render_template(
+                    "add_stock.html",
+                    category=category,
+                    cat_len=cat_len,
+                    message=f'Successfully added a new stock item "{request.form.get("stock_name")}"',
+                )
+
     if request.method == "GET":
-        return render_template("add_stock.html", category=category, cat_len=cat_len)
+        category = db.execute("SELECT category FROM category").fetchall()
+        cat_len = len(category)
+        return render_template(
+            "add_stock.html", category=category, cat_len=cat_len, message=""
+        )
