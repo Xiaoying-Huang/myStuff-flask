@@ -188,7 +188,7 @@ def storage_plan():
             containers_dict[house_name]["rooms"][room_name]["furniture"][
                 furniture_name
             ]["containers"][container_name] = container_id
-    print(containers_dict)
+    # print(containers_dict)
 
     return render_template("storage_plan.html", menu=containers_dict)
 
@@ -424,11 +424,13 @@ def add_container():
 @login_required
 def add_stock():
     db = get_db_connection()
-    category = db.execute("SELECT category, category_id FROM category").fetchall()
-    cat_len = len(category)
-    for i in range(cat_len):
-        print(category[i]["category_id"])
-        print(category[i]["category"])
+    categories = db.execute("SELECT category, category_id FROM category").fetchall()
+
+    categories_dict = {}
+    for row in categories:
+        category, category_id = row
+        if category_id not in categories_dict:
+            categories_dict[category_id] = category
 
     if request.method == "POST":
         # add category
@@ -456,19 +458,25 @@ def add_stock():
                     ),
                 )
                 db.commit()
-                category = db.execute(
+                categories = db.execute(
                     "SELECT category, category_id FROM category"
                 ).fetchall()
-                cat_len = len(category)
+
+                categories_dict = {}
+                for row in categories:
+                    category, category_id = row
+                    if category_id not in categories_dict:
+                        categories_dict[category_id] = category
                 return render_template(
                     "add_stock.html",
-                    category=category,
-                    cat_len=cat_len,
+                    categories_dict=categories_dict,
                     message=f'Successfully added a new stock category "{request.form.get("category_name")}"',
                 )
 
         # add new stock items
         if "stock_submit" in request.form:
+            print(request.form)
+            print("categoryid", request.form.get("category"))
             # Duplicate name check
             stock_name_search = db.execute(
                 "SELECT COUNT(*) FROM stock WHERE stock_name = ?",
@@ -478,9 +486,8 @@ def add_stock():
             if stock_name_search[0]["COUNT(*)"] > 0:
                 return render_template(
                     "add_stock.html",
-                    category=category,
-                    cat_len=cat_len,
-                    message_stock=f'Stock item named "{request.form.get("stock_name")}" already exists. Please choose another name or simply update the quantity of existing item.',
+                    categories_dict=categories_dict,
+                    message=f'Stock item named "{request.form.get("stock_name")}" already exists. Please choose another name or simply update the quantity of existing item.',
                 )
             else:
                 db.execute(
@@ -494,20 +501,103 @@ def add_stock():
                     ),
                 )
                 db.commit()
-                category = db.execute(
+                categories = db.execute(
                     "SELECT category, category_id FROM category"
                 ).fetchall()
-                cat_len = len(category)
-                return render_template(
-                    "add_stock.html",
-                    category=category,
-                    cat_len=cat_len,
-                    message=f'Successfully added a new stock item "{request.form.get("stock_name")}"',
-                )
 
-    if request.method == "GET":
-        category = db.execute("SELECT category FROM category").fetchall()
-        cat_len = len(category)
+                categories_dict = {}
+                for row in categories:
+                    category, category_id = row
+                    if category_id not in categories_dict:
+                        categories_dict[category_id] = category
+
+            return render_template(
+                "add_stock.html",
+                categories_dict=categories_dict,
+                message=f'Successfully added a new stock item "{request.form.get("stock_name")}"',
+            )
+
+    else:
         return render_template(
-            "add_stock.html", category=category, cat_len=cat_len, message=""
+            "add_stock.html",
+            categories_dict=categories_dict,
+            message="",
         )
+
+
+@app.route("/assign_stock", methods=["GET", "POST"])
+@login_required
+def assign_stock():
+    db = get_db_connection()
+
+    containers_dict = {}
+    rows = db.execute(
+        "SELECT container_id, container_name, furniture_name, room_name, house_name FROM container JOIN furniture ON container.furniture_id=furniture.furniture_id JOIN room ON furniture.room_id=room.room_id JOIN house ON room.house_id=house.house_id ORDER BY house.house_id, room.room_id, furniture.furniture_id, container.container_id"
+    ).fetchall()
+
+    for row in rows:
+        container_id, container_name, furniture_name, room_name, house_name = row
+        # create containers_dict
+        if house_name not in containers_dict:
+            containers_dict[house_name] = {}
+        if room_name not in containers_dict[house_name]:
+            containers_dict[house_name][room_name] = {}
+        if furniture_name not in containers_dict[house_name][room_name]:
+            containers_dict[house_name][room_name][furniture_name] = {}
+        if container_id not in containers_dict[house_name][room_name][furniture_name]:
+            containers_dict[house_name][room_name][furniture_name][
+                container_id
+            ] = container_name
+
+    # print(containers_dict)
+
+    # stock items
+    stocks = db.execute(
+        "SELECT stock_id, stock_name, category, quantity, note FROM stock JOIN category ON stock.category_id=category.category_id;"
+    ).fetchall()
+
+    # create stocks_dict
+    stocks_dict = {}
+    for stock in stocks:
+        stock_id, stock_name, category, quantity, note = stock
+
+        if stock_id not in stocks_dict:
+            stocks_dict[stock_id] = {
+                "stock_name": stock_name,
+                "category": category,
+                "quantity": quantity,
+                "note": note,
+            }
+    # print(stocks_dict)
+
+    if request.method == "POST":
+        selected_container = request.form.get("container")
+        print("selected_container", selected_container)
+        selected_stocks = request.form.getlist("stock_item")
+        print("selected stocks", selected_stocks)
+        for selected_stock in selected_stocks:
+            db.execute(
+                "INSERT INTO stock_container(stock_id, container_id) VALUES (?, ?)",
+                (selected_stock, selected_container),
+            )
+            db.commit()
+        return render_template(
+            "assign_stock.html",
+            containers_dict=containers_dict,
+            stocks_dict=stocks_dict,
+        )
+    else:
+        return render_template(
+            "assign_stock.html",
+            containers_dict=containers_dict,
+            stocks_dict=stocks_dict,
+        )
+
+
+@app.route("/view_stock", methods=["GET", "POST"])
+@login_required
+def view_stock():
+    if request.method == "POST":
+        pass
+    else:
+        return render_template("view_stock.html")

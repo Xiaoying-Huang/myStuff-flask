@@ -13,7 +13,7 @@
 <div id='addSTock'>
     <form id='stock_info' method='post'>
         <label for='stock_name'>Stock name</label>
-        <input type='text' name='stock_name' required>
+        <input type='text' name='stock_name' placeholder='Enter stock name here' required>
         <br>
         <label for='quantity'>Quantity</label>
         <input type='number' min='1' name="quantity" id="quantity" placeholder='Please enter quantity greater than 1'>
@@ -21,12 +21,12 @@
         <label for='note'>Note</label>
         <input type='text' name='note' id="note" placeholder='Additional notes for the stock item'>
         <br>
-        <label>Category</label>
+        <label for='category_select'>Category</label>
         <br>
-        <select name="category" id="category_select" required onchange="toggleNewCategory()">
-            <option disabled selected>Select stock category</option>
-            {% for i in range(cat_len) %}
-            <option value='{{category[i]["category_id"]}}'>{{category[i]["category"]}}</option>
+        <select name="category" id="category" aria-label='category' onchange='toggleNewCategory()' required>
+            <option value="" disabled selected>Select stock category</option>
+            {% for key in categories_dict %}
+            <option value='{{key}}'>{{categories_dict[key]}}</option>
             {% endfor %}
             <option value='newCategory'>Add new categories</option>
         </select>
@@ -34,6 +34,7 @@
         <button type="submit" name='stock_submit'>Add stock</button>
     </form>
 </div>
+
 <div id='addCategory'>
     <form id='new_cat' method='post'>
         <label for='category_name'>New Category Name</label>
@@ -47,7 +48,7 @@
 </div>
 
 <p>{{message}}</p>
-
+</div>
 <div>
     <p>Back to <a href='/storage_plan'>storage plan</a></p>
 </div>
@@ -55,7 +56,7 @@
 <script>
 
     function toggleNewCategory() {
-        var categorySelect = document.getElementById("category_select");
+        var categorySelect = document.getElementById("category");
         var addCategory = document.getElementById("addCategory");
 
         if (categorySelect.value === "newCategory") {
