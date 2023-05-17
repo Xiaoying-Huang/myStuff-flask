@@ -444,7 +444,6 @@ def add_stock():
                 return render_template(
                     "add_stock.html",
                     category=category,
-                    cat_len=cat_len,
                     message=f'Category "{request.form.get("category_name")}" already exists. Please enter another category.',
                 )
 
@@ -553,7 +552,7 @@ def assign_stock():
 
     # stock items
     stocks = db.execute(
-        "SELECT stock_id, stock_name, category, quantity, note FROM stock JOIN category ON stock.category_id=category.category_id;"
+        "SELECT stock_id, stock_name, category, quantity, note FROM stock JOIN category ON stock.category_id=category.category_id WHERE stock.quantity>0"
     ).fetchall()
 
     # create stocks_dict
@@ -571,26 +570,43 @@ def assign_stock():
     # print(stocks_dict)
 
     if request.method == "POST":
-        selected_container = request.form.get("container")
-        print("selected_container", selected_container)
-        selected_stocks = request.form.getlist("stock_item")
-        print("selected stocks", selected_stocks)
-        for selected_stock in selected_stocks:
-            db.execute(
-                "INSERT INTO stock_container(stock_id, container_id) VALUES (?, ?)",
-                (selected_stock, selected_container),
+        if request.form.get("stock_assign") == "multi_stock_items":
+            selected_container = request.form.get("container")
+            print("selected_container", selected_container)
+            selected_stocks = request.form.getlist("stock_item")
+            print("selected stocks", selected_stocks)
+            for selected_stock in selected_stocks:
+                db.execute(
+                    "INSERT INTO stock_container(stock_id, container_id, quantity) VALUES (?, ?,?)",
+                    (
+                        selected_stock,
+                        selected_container,
+                        request.form.get(f"quantity_{selected_stock}"),
+                    ),
+                )
+                selected_stock = int(selected_stock)
+                updated_quantity = stocks_dict[selected_stock]["quantity"] - float(
+                    request.form.get(f"quantity_{selected_stock}")
+                )
+                stocks_dict[selected_stock]["quantity"] = updated_quantity
+                db.execute(
+                    "UPDATE stock SET quantity = ? WHERE stock_id =?",
+                    (updated_quantity, selected_stock),
+                )
+                db.commit()
+                print("quantity", request.form.get(f"quantity_{selected_stock}"))
+            return render_template(
+                "assign_stock.html",
+                containers_dict=containers_dict,
+                stocks_dict=stocks_dict,
+                message=f"""Successfully assigned "{stocks_dict[selected_stock]["stock_name"]}" to {containers_dict[int(selected_container)]} in the quantity of {request.form.get(f"quantity_{selected_stock}")}""",
             )
-            db.commit()
-        return render_template(
-            "assign_stock.html",
-            containers_dict=containers_dict,
-            stocks_dict=stocks_dict,
-        )
     else:
         return render_template(
             "assign_stock.html",
             containers_dict=containers_dict,
             stocks_dict=stocks_dict,
+            message="",
         )
 
 

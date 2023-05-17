@@ -1,0 +1,138 @@
+{% extends 'layout.html' %}
+{% block title %}Assign Stock{% endblock %}
+
+{% block body%}
+<!-- 1. Multiple stock items to be assigned to single container -->
+<div id='multiStocks'>
+    <form method='post'>
+        <!-- -list of containers -->
+        <p>Select the container where you wish to assign your stock items to:</p>
+        <label for='house'>House</label>
+        <br>
+        <select id="house" name='house' required>
+            <option></option>
+        </select>
+        <br>
+        <label for='room'>Room</label>
+        <br>
+        <select id="room" name='room'></select>
+        <br>
+        <label for='furniture'>Furniture</label>
+        <br>
+        <select id="furniture" name='furniture'></select>
+        <br>
+        <label for='container'>Container</label>
+        <br>
+        <select id="container" name='container' required></select>
+        <br>
+        <!-- list of unassigned stock items (multiple choices) -->
+        <p>Unassgined stock items: </p>
+        {% if stocks_dict == {} %}
+        <p>Currently there aren't any unassigned stock items.</p>
+        {% endif %}
+        {% for key in stocks_dict%}
+        <label>
+            <input type="checkbox" name="stock_item" value="{{key}}">
+            {{stocks_dict[key]["stock_name"]}}: {{stocks_dict[key]["note"]}}
+        </label>
+        <br>
+        <span>Quantity available:
+            {{stocks_dict[key]["quantity"]}}
+        </span>
+        <br>
+        <label for='quantity_{{key}}'>Stock desired to assign to the container:</label>
+        <input type="number" id='quantity_{{key}}' name="quantity_{{key}}" min="0"
+            max="{{stocks_dict[key]['quantity']}}" placeholder='Quantity should not exceed quantity available' required>
+        <br>
+        {% endfor %}
+        <button type='submit' name='stock_assign' value='multi_stock_items'>Assign stock</button>
+    </form>
+    <div>
+        <h3 id='containerSelected'></h3>
+        <p id='containerLocation'></p>
+    </div>
+
+
+</div>
+
+<div>
+    <p>{{message}}</p>
+</div>
+
+<script src="//code.jquery.com/jquery-2.1.1.min.js"></script>
+<script>
+    "use strict";
+
+    var systems = {{ containers_dict| tojson }};
+
+    var house = $('select#house');
+    var room = $('select#room');
+    var furniture = $('select#furniture');
+    var container = $('select#container');
+    var containerSelectedText = $('h3#containerSelected');
+    var locationText = $('h3#containerLocation');
+    var selectedStockDiv = $('div#selectedStock');
+
+    function updateLocation() {
+        var selectedHouse = house.val() || '';
+        var selectedRoom = room.val() || '';
+        var selectedFurniture = furniture.val() || '';
+
+        var locationTextString = "Location of container: " + selectedHouse + " > " + selectedRoom + " > " + selectedFurniture;
+        locationText.text(locationTextString);
+    }
+
+    for (var key in systems) {
+        house.append($('<option/>', { 'value': key, 'text': key }));
+    }
+
+    house.change(function (ev) {
+        room.empty();
+        room.append($('<option/>'));
+
+        var rooms = systems[house.val()];
+
+        for (var key in rooms) {
+            room.append($('<option/>', { 'value': key, 'text': key }));
+        }
+
+        updateLocation();
+    }
+    );
+
+    room.change(function (ev) {
+        furniture.empty();
+        furniture.append($('<option/>'));
+
+        var furnitures = systems[house.val()][room.val()];
+
+        for (var key in furnitures) {
+            furniture.append($('<option/>', { 'value': key, 'text': key }))
+        }
+
+        updateLocation();
+
+    });
+
+    furniture.change(function (ev) {
+        container.empty();
+        container.append($('<option/>'));
+
+        var containers = systems[house.val()][room.val()][furniture.val()];
+
+        for (var key in containers) {
+            container.append($('<option/>', { 'value': key, 'text': containers[key] }))
+        }
+
+        updateLocation();
+
+    });
+
+    container.change(function (ev) {
+        var containerChosen = systems[house.val()][room.val()][furniture.val()][container.val()];
+        var containerSelectedTextString = "Container selected: " + containerChosen;
+        containerSelectedText.text(containerSelectedTextString);
+    });
+
+</script>
+{% endblock %}
