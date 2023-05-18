@@ -11,12 +11,10 @@
 
 {% block body%}
 <div id='addSTock'>
+    <p> Add new stock item</p>
     <form id='stock_info' method='post'>
         <label for='stock_name'>Stock name</label>
         <input type='text' name='stock_name' placeholder='Enter stock name here' required>
-        <br>
-        <label for='quantity'>Quantity</label>
-        <input type='number' min='1' name="quantity" id="quantity" placeholder='Please enter quantity greater than 1'>
         <br>
         <label for='note'>Note</label>
         <input type='text' name='note' id="note" placeholder='Additional notes for the stock item'>
@@ -36,6 +34,7 @@
 </div>
 
 <div id='addCategory'>
+    <p>Add new stock category</p>
     <form id='new_cat' method='post'>
         <label for='category_name'>New Category Name</label>
         <input type='text' name='category_name' required>

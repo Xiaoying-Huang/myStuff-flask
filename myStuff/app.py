@@ -1,6 +1,8 @@
 import sqlite3
 
-from flask import Flask, render_template, request, session, redirect
+import urllib.parse
+
+from flask import Flask, render_template, request, session, redirect, url_for
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from flask_login import (
@@ -112,15 +114,49 @@ def register():
             return render_template("error.html", message=f"Passwords do not match")
         else:
             hashed = generate_password_hash(password)
+            # Insert new user
             db.execute(
                 "INSERT INTO user(username, password) VALUES (?, ?) ",
                 (username, hashed),
             )
             db.commit()
-            return render_template(
-                "login.html",
-                message=f"Successfully registered. Please log in with your username and password.",
+            # Insert the 'Unassigned' container
+            user_id = db.execute(
+                "SELECT id FROM user WHERE username = ?", [username]
+            ).fetchall()[0]["id"]
+            db.execute(
+                "INSERT INTO house (house_name, user_id) VALUES (?, ?)",
+                ("Unassigned", user_id),
             )
+            db.commit()
+            house_id = db.execute(
+                "SELECT house_id FROM house WHERE house_name = 'Unassigned' AND user_id=?",
+                [user_id],
+            ).fetchall()[0]["house_id"]
+            db.execute(
+                "INSERT INTO room (room_name, house_id) VALUES (?, ?)",
+                ("Unassigned", house_id),
+            )
+            db.commit()
+            room_id = db.execute(
+                "SELECT room_id FROM room WHERE room_name = 'Unassigned' AND house_id =?",
+                [house_id],
+            ).fetchall()[0]["room_id"]
+            db.execute(
+                "INSERT INTO furniture (furniture_name, room_id) VALUES (?, ?)",
+                ("Unassigned", room_id),
+            )
+            db.commit()
+            furniture_id = db.execute(
+                "SELECT furniture_id FROM furniture WHERE furniture_name = 'Unassigned' AND room_id = ?",
+                [room_id],
+            ).fetchall()[0]["furniture_id"]
+            db.execute(
+                "INSERT INTO container (container_name, furniture_id, is_unassigned) VALUES (?, ?, 1)",
+                ("Unassigned", furniture_id),
+            )
+            db.commit()
+            return redirect(url_for("login"))
 
     else:
         return render_template("register.html")
@@ -139,7 +175,8 @@ def storage_plan():
     # First, obtain a list of all the houses, rooms, furniture and containers.
     db = get_db_connection()
     rows = db.execute(
-        "SELECT house.house_id, house.house_name, room.room_id, room.room_name, furniture.furniture_id, furniture.furniture_name, container.container_id, container.container_name FROM house LEFT JOIN room ON house.house_id = room.house_id LEFT JOIN furniture ON room.room_id = furniture.room_id LEFT JOIN container ON furniture.furniture_id = container.furniture_id"
+        "SELECT house.house_id, house.house_name, room.room_id, room.room_name, furniture.furniture_id, furniture.furniture_name, container.container_id, container.container_name FROM house LEFT JOIN room ON house.house_id = room.house_id LEFT JOIN furniture ON room.room_id = furniture.room_id LEFT JOIN container ON furniture.furniture_id = container.furniture_id WHERE container.is_unassigned != 1 AND house.user_id=?",
+        [current_user.id],
     ).fetchall()
 
     containers_dict = {}
@@ -207,6 +244,13 @@ def add_house():
                     "add_house.html", message_house="House name should not be empty!"
                 )
 
+            # Ensure house name is not 'Unassigned'
+            if request.form.get("house_name").lower() == "unassigned":
+                return render_template(
+                    "add_house.html",
+                    message_house="Please do not use 'unassigned' as the house name.",
+                )
+
             # Perform a house name search to ensure the input value is unique
             house_name_search = db.execute(
                 "SELECT COUNT(*) FROM house WHERE house_name = ? AND user_id = ?",
@@ -236,7 +280,8 @@ def add_house():
 def add_room():
     db = get_db_connection()
     houses = db.execute(
-        "SELECT house_name, house_id FROM house WHERE user_id=?", [current_user.id]
+        "SELECT house_name, house_id FROM house WHERE user_id=? AND house_name != 'Unassigned'",
+        [current_user.id],
     ).fetchall()
     house_len = len(houses)
     if request.method == "POST":
@@ -252,6 +297,13 @@ def add_room():
                 message_room="Room name should not be empty!",
                 house_len=house_len,
                 houses=houses,
+            )
+
+        # Ensure room name is not 'Unassigned'
+        if request.form.get("room_name").lower() == "unassigned":
+            return render_template(
+                "add_house.html",
+                message_house="Please do not use 'unassigned' as the house name.",
             )
 
         # Perform name research of the room. If there is another room within the same house under the same user id, the room cannot be added and an error message should be shown to the user.
@@ -294,7 +346,8 @@ def add_furniture():
 
     rooms_dict = {}
     rows = db.execute(
-        "SELECT house.house_id, house.house_name, room.room_id, room.room_name FROM house JOIN room ON house.house_id = room.house_id ORDER BY house.house_id"
+        "SELECT house.house_id, house.house_name, room.room_id, room.room_name FROM house JOIN room ON house.house_id = room.house_id WHERE house.house_name != 'Unassigned' AND room.room_name != 'Unassigned' AND house.user_id=?",
+        [current_user.id],
     ).fetchall()
 
     for row in rows:
@@ -314,6 +367,14 @@ def add_furniture():
             return render_template(
                 "add_furniture.html",
                 message="Furniture name should not be empty!",
+                menu=rooms_dict,
+            )
+
+        # Ensure furniture name is not 'unassigned'
+        if request.form.get("furniture").lower() == "unassigned":
+            return render_template(
+                "add_furniture.html",
+                message="Please do not use 'unassigned' as the furniture name.",
                 menu=rooms_dict,
             )
 
@@ -358,7 +419,8 @@ def add_container():
     furniture_dict = {}
 
     rows = db.execute(
-        "SELECT house.house_id, house.house_name, room.room_id, room.room_name, furniture.furniture_id, furniture.furniture_name FROM house JOIN room ON house.house_id = room.house_id JOIN furniture ON room.room_id = furniture.room_id"
+        "SELECT house.house_id, house.house_name, room.room_id, room.room_name, furniture.furniture_id, furniture.furniture_name FROM house JOIN room ON house.house_id = room.house_id JOIN furniture ON room.room_id = furniture.room_id WHERE house.house_name != 'Unassigned' AND room.room_name!='Unassigned' AND furniture.furniture_name !='Unassigned' AND house.user_id=?",
+        [current_user.id],
     ).fetchall()
 
     for row in rows:
@@ -388,6 +450,14 @@ def add_container():
             return render_template(
                 "add_container.html",
                 message="Container name should not be empty!",
+                menu=furniture_dict,
+            )
+
+        # Ensure container name is not 'unassigned':
+        if request.form.get("container").lower() == "unassigned":
+            return render_template(
+                "add_container.html",
+                message="Container should not be named as 'unassigned'. Please choose another name.",
                 menu=furniture_dict,
             )
 
@@ -424,7 +494,9 @@ def add_container():
 @login_required
 def add_stock():
     db = get_db_connection()
-    categories = db.execute("SELECT category, category_id FROM category").fetchall()
+    categories = db.execute(
+        "SELECT category, category_id FROM category WHERE user_id =?", [current_user.id]
+    ).fetchall()
 
     categories_dict = {}
     for row in categories:
@@ -437,8 +509,8 @@ def add_stock():
         if "cat_submit" in request.form:
             # name check
             cat_name_search = db.execute(
-                "SELECT COUNT(*) FROM category WHERE category = ?",
-                [request.form.get("category_name")],
+                "SELECT COUNT(*) FROM category WHERE category = ? AND user_id=?",
+                (request.form.get("category_name"), current_user.id),
             ).fetchall()
             if cat_name_search[0]["COUNT(*)"] > 0:
                 return render_template(
@@ -457,15 +529,13 @@ def add_stock():
                     ),
                 )
                 db.commit()
-                categories = db.execute(
-                    "SELECT category, category_id FROM category"
-                ).fetchall()
+                new_categoryid = db.execute(
+                    "SELECT category_id FROM category WHERE user_id =? AND category = ?",
+                    (current_user.id, request.form.get("category_name")),
+                ).fetchall()[0]["category_id"]
 
-                categories_dict = {}
-                for row in categories:
-                    category, category_id = row
-                    if category_id not in categories_dict:
-                        categories_dict[category_id] = category
+                categories_dict[new_categoryid] = request.form.get("category_name")
+
                 return render_template(
                     "add_stock.html",
                     categories_dict=categories_dict,
@@ -474,12 +544,10 @@ def add_stock():
 
         # add new stock items
         if "stock_submit" in request.form:
-            print(request.form)
-            print("categoryid", request.form.get("category"))
             # Duplicate name check
             stock_name_search = db.execute(
-                "SELECT COUNT(*) FROM stock WHERE stock_name = ?",
-                [request.form.get("stock_name")],
+                "SELECT COUNT(*) FROM stock WHERE stock_name = ? and user_id=?",
+                (request.form.get("stock_name"), current_user.id),
             ).fetchall()
 
             if stock_name_search[0]["COUNT(*)"] > 0:
@@ -490,25 +558,15 @@ def add_stock():
                 )
             else:
                 db.execute(
-                    "INSERT INTO stock(stock_name, category_id, quantity, note, user_id) VALUES(?,?,?,?,?)",
+                    "INSERT INTO stock(stock_name, category_id, note, user_id) VALUES(?,?,?,?)",
                     (
                         request.form.get("stock_name"),
                         request.form.get("category"),
-                        request.form.get("quantity"),
                         request.form.get("note"),
                         current_user.id,
                     ),
                 )
                 db.commit()
-                categories = db.execute(
-                    "SELECT category, category_id FROM category"
-                ).fetchall()
-
-                categories_dict = {}
-                for row in categories:
-                    category, category_id = row
-                    if category_id not in categories_dict:
-                        categories_dict[category_id] = category
 
             return render_template(
                 "add_stock.html",
