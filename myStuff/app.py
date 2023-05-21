@@ -610,19 +610,19 @@ def assign_stock():
 
     # stock items
     stocks = db.execute(
-        "SELECT stock_id, stock_name, category, quantity, note FROM stock JOIN category ON stock.category_id=category.category_id WHERE stock.quantity>0"
+        "SELECT stock_id, stock_name, category, note FROM stock JOIN category ON stock.category_id=category.category_id AND stock.user_id = ?",
+        [current_user.id],
     ).fetchall()
 
     # create stocks_dict
     stocks_dict = {}
     for stock in stocks:
-        stock_id, stock_name, category, quantity, note = stock
+        stock_id, stock_name, category, note = stock
 
         if stock_id not in stocks_dict:
             stocks_dict[stock_id] = {
                 "stock_name": stock_name,
                 "category": category,
-                "quantity": quantity,
                 "note": note,
             }
     # print(stocks_dict)
@@ -633,6 +633,7 @@ def assign_stock():
             print("selected_container", selected_container)
             selected_stocks = request.form.getlist("stock_item")
             print("selected stocks", selected_stocks)
+            message = ""
             for selected_stock in selected_stocks:
                 db.execute(
                     "INSERT INTO stock_container(stock_id, container_id, quantity) VALUES (?, ?,?)",
@@ -643,21 +644,15 @@ def assign_stock():
                     ),
                 )
                 selected_stock = int(selected_stock)
-                updated_quantity = stocks_dict[selected_stock]["quantity"] - float(
-                    request.form.get(f"quantity_{selected_stock}")
-                )
-                stocks_dict[selected_stock]["quantity"] = updated_quantity
-                db.execute(
-                    "UPDATE stock SET quantity = ? WHERE stock_id =?",
-                    (updated_quantity, selected_stock),
-                )
                 db.commit()
                 print("quantity", request.form.get(f"quantity_{selected_stock}"))
+                message += f"""Successfully assigned "{stocks_dict[selected_stock]["stock_name"]}" to {containers_dict[request.form.get("house")][request.form.get("room")][request.form.get("furniture")][int(selected_container)]} in the quantity of {request.form.get(f"quantity_{selected_stock}")}! """
+
             return render_template(
                 "assign_stock.html",
                 containers_dict=containers_dict,
                 stocks_dict=stocks_dict,
-                message=f"""Successfully assigned "{stocks_dict[selected_stock]["stock_name"]}" to {containers_dict[int(selected_container)]} in the quantity of {request.form.get(f"quantity_{selected_stock}")}""",
+                message=message,
             )
     else:
         return render_template(
@@ -671,7 +666,38 @@ def assign_stock():
 @app.route("/view_stock", methods=["GET", "POST"])
 @login_required
 def view_stock():
+    db = get_db_connection()
+    stocks = db.execute(
+        "SELECT stock_container.stock_container_id, stock.stock_id,stock.stock_name,container.container_id, container.container_name, stock_container.quantity, furniture.furniture_name, room.room_name, house.house_name FROM stock_container LEFT JOIN stock ON stock.stock_id=stock_container.stock_id LEFT JOIN container ON container.container_id=stock_container.container_id LEFT JOIN furniture on furniture.furniture_id=container.furniture_id LEFT JOIN room on room.room_id=furniture.room_id LEFT JOIN house on house.house_id=room.house_id WHERE stock.user_id=?",
+        [current_user.id],
+    )
+    stocks_dict = {}
+    for stock in stocks:
+        (
+            stock_container_id,
+            stock_id,
+            stock_name,
+            container_id,
+            container_name,
+            quantity,
+            furniture_name,
+            room_name,
+            house_name,
+        ) = stock
+        if stock_container_id not in stocks_dict:
+            stocks_dict[stock_container_id] = {
+                "stock_id": stock_id,
+                "stock_name": stock_name,
+                "container_id": container_id,
+                "container_name": container_name,
+                "quantity": quantity,
+                "furniture_name": furniture_name,
+                "room_name": room_name,
+                "house_name": house_name,
+            }
+    print(stocks_dict)
+
     if request.method == "POST":
         pass
     else:
-        return render_template("view_stock.html")
+        return render_template("view_stock.html", stocks=stocks_dict)

@@ -1,0 +1,21 @@
+{% extends 'layout.html' %}
+{% block title %}View Stock{% endblock %}
+
+{% block body%}
+<table>
+    <tr>
+        <th>Stock name</th>
+        <th>Quantity</th>
+        <th>Container</th>
+        <th>Location</th>
+    </tr>
+    {% for stock in stocks%}
+    <tr>
+        <td>{{stocks[stock]["stock_name"]}}</td>
+        <td>{{stocks[stock]["quantity"]}}</td>
+        <td>{{stocks[stock]["container_name"]}}</td>
+        <td>{{stocks[stock]["house_name"]}}->{{stocks[stock]["room_name"]}}->{{stocks[stock]["furniture_name"]}}</td>
+    </tr>
+    {% endfor%}
+</table>
+{% endblock %}

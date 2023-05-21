@@ -25,10 +25,10 @@
         <br>
         <select id="container" name='container' required></select>
         <br>
-        <!-- list of unassigned stock items (multiple choices) -->
-        <p>Unassgined stock items: </p>
+        <!-- list of available stock items (multiple choices) -->
+        <p>Stock items: </p>
         {% if stocks_dict == {} %}
-        <p>Currently there aren't any unassigned stock items.</p>
+        <p>Currently there aren't any stock items. Please <a href='/add_stock'>add stock items</a> first.</p>
         {% endif %}
         {% for key in stocks_dict%}
         <label>
@@ -36,13 +36,9 @@
             {{stocks_dict[key]["stock_name"]}}: {{stocks_dict[key]["note"]}}
         </label>
         <br>
-        <span>Quantity available:
-            {{stocks_dict[key]["quantity"]}}
-        </span>
-        <br>
-        <label for='quantity_{{key}}'>Stock desired to assign to the container:</label>
+        <label for='quantity_{{key}}'>Quantity desired to assign to the container:</label>
         <input type="number" id='quantity_{{key}}' name="quantity_{{key}}" min="0"
-            max="{{stocks_dict[key]['quantity']}}" placeholder='Quantity should not exceed quantity available' required>
+            placeholder='Quantity desired to assign to the container' required>
         <br>
         {% endfor %}
         <button type='submit' name='stock_assign' value='multi_stock_items'>Assign stock</button>
