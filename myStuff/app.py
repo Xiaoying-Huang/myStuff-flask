@@ -52,6 +52,12 @@ def index():
     return render_template("index.html")
 
 
+@app.route("/dashboard")
+@login_required
+def dashboard():
+    return render_template("dashboard.html", username=current_user.username)
+
+
 @app.route("/login", methods=["GET", "POST"])
 def login():
     db = get_db_connection()
@@ -86,7 +92,7 @@ def login():
         session["user_id"] = rows[0]["id"]
 
         # Redirect user to home page
-        return render_template("dashboard.html", username=current_user.username)
+        return redirect(url_for("dashboard"))
 
     # User reached route via GET (as by clicking a link or via redirect)
     else:
@@ -490,7 +496,7 @@ def add_container():
         return render_template("add_container.html", menu=furniture_dict, message="")
 
 
-@app.route("/add_stock", methods=["GET", "POST"])
+@app.route("/add_stock/new", methods=["GET", "POST"])
 @login_required
 def add_stock():
     db = get_db_connection()
@@ -503,6 +509,25 @@ def add_stock():
         category, category_id = row
         if category_id not in categories_dict:
             categories_dict[category_id] = category
+
+    containers_dict = {}
+    rows = db.execute(
+        "SELECT container_id, container_name, furniture_name, room_name, house_name FROM container JOIN furniture ON container.furniture_id=furniture.furniture_id JOIN room ON furniture.room_id=room.room_id JOIN house ON room.house_id=house.house_id ORDER BY house.house_id, room.room_id, furniture.furniture_id, container.container_id"
+    ).fetchall()
+
+    for row in rows:
+        container_id, container_name, furniture_name, room_name, house_name = row
+        # create containers_dict
+        if house_name not in containers_dict:
+            containers_dict[house_name] = {}
+        if room_name not in containers_dict[house_name]:
+            containers_dict[house_name][room_name] = {}
+        if furniture_name not in containers_dict[house_name][room_name]:
+            containers_dict[house_name][room_name][furniture_name] = {}
+        if container_id not in containers_dict[house_name][room_name][furniture_name]:
+            containers_dict[house_name][room_name][furniture_name][
+                container_id
+            ] = container_name
 
     if request.method == "POST":
         # add category
@@ -517,6 +542,7 @@ def add_stock():
                     "add_stock.html",
                     category=category,
                     message=f'Category "{request.form.get("category_name")}" already exists. Please enter another category.',
+                    menu=containers_dict,
                 )
 
             else:
@@ -540,6 +566,7 @@ def add_stock():
                     "add_stock.html",
                     categories_dict=categories_dict,
                     message=f'Successfully added a new stock category "{request.form.get("category_name")}"',
+                    menu=containers_dict,
                 )
 
         # add new stock items
@@ -555,6 +582,7 @@ def add_stock():
                     "add_stock.html",
                     categories_dict=categories_dict,
                     message=f'Stock item named "{request.form.get("stock_name")}" already exists. Please choose another name or simply update the quantity of existing item.',
+                    menu=containers_dict,
                 )
             else:
                 db.execute(
@@ -567,11 +595,26 @@ def add_stock():
                     ),
                 )
                 db.commit()
+                stock_id = db.execute(
+                    "SELECT stock_id from stock WHERE stock_name = ? AND user_id =?",
+                    (request.form.get("stock_name"), current_user.id),
+                ).fetchall()[0]["stock_id"]
+                print(stock_id)
+                db.execute(
+                    "INSERT INTO stock_container(stock_id, container_id, quantity) VALUES(?, ?, ?)",
+                    (
+                        stock_id,
+                        request.form.get("container"),
+                        request.form.get("quantity"),
+                    ),
+                )
+                db.commit()
 
             return render_template(
                 "add_stock.html",
                 categories_dict=categories_dict,
                 message=f'Successfully added a new stock item "{request.form.get("stock_name")}"',
+                menu=containers_dict,
             )
 
     else:
@@ -579,6 +622,7 @@ def add_stock():
             "add_stock.html",
             categories_dict=categories_dict,
             message="",
+            menu=containers_dict,
         )
 
 
@@ -695,9 +739,59 @@ def view_stock():
                 "room_name": room_name,
                 "house_name": house_name,
             }
-    print(stocks_dict)
+    # print(stocks_dict)
 
     if request.method == "POST":
         pass
     else:
         return render_template("view_stock.html", stocks=stocks_dict)
+
+
+@app.route("/test", methods=["GET", "POST"])
+@login_required
+def test():
+    db = get_db_connection()
+    # stock items
+    stocks = db.execute(
+        "SELECT stock_id, stock_name, category, note FROM stock JOIN category ON stock.category_id=category.category_id AND stock.user_id = ?",
+        [current_user.id],
+    ).fetchall()
+
+    # create stocks_dict
+    stocks_dict = {}
+    for stock in stocks:
+        stock_id, stock_name, category, note = stock
+
+        if stock_id not in stocks_dict:
+            stocks_dict[stock_id] = {
+                "stock_name": stock_name,
+                "category": category,
+                "note": note,
+            }
+    # print(stocks_dict)
+
+    containers_dict = {}
+    rows = db.execute(
+        "SELECT container_id, container_name, furniture_name, room_name, house_name FROM container JOIN furniture ON container.furniture_id=furniture.furniture_id JOIN room ON furniture.room_id=room.room_id JOIN house ON room.house_id=house.house_id WHERE house.user_id=?",
+        [current_user.id],
+    ).fetchall()
+
+    for row in rows:
+        container_id, container_name, furniture_name, room_name, house_name = row
+        # create containers_dict
+        if house_name not in containers_dict:
+            containers_dict[house_name] = {}
+        if room_name not in containers_dict[house_name]:
+            containers_dict[house_name][room_name] = {}
+        if furniture_name not in containers_dict[house_name][room_name]:
+            containers_dict[house_name][room_name][furniture_name] = {}
+        if container_id not in containers_dict[house_name][room_name][furniture_name]:
+            containers_dict[house_name][room_name][furniture_name][
+                container_id
+            ] = container_name
+    if request.method == "POST":
+        pass
+    else:
+        return render_template(
+            "test.html", stocks=stocks_dict, containers=containers_dict
+        )

@@ -29,6 +29,22 @@
             <option value='newCategory'>Add new categories</option>
         </select>
         <br>
+        <label for='quantity'>Quantity</label>
+        <input type='number' name='quantity' id='quantity' placeholder='Quantity'>
+        <p>Location</p>
+        <label for='house'>House</label>
+        <select name='hosue' id='house' aria-label='house'>
+            <option></option>
+        </select>
+        <label for='room'>
+            Room
+        </label>
+        <select name="room" id="room"></select>
+        <label for='furniture'>Furniture</label>
+        <select name='furniture' id='furniture'></select>
+        <label for="container">Container</label>
+        <select name='container' id='container'></select>
+        <br>
         <button type="submit" name='stock_submit'>Add stock</button>
     </form>
 </div>
@@ -52,6 +68,7 @@
     <p>Back to <a href='/storage_plan'>storage plan</a></p>
 </div>
 
+<script src="//code.jquery.com/jquery-2.1.1.min.js"></script>
 <script>
 
     function toggleNewCategory() {
@@ -64,6 +81,55 @@
             addCategory.style.display = "none";
         }
     }
+
+    "use strict";
+
+    var systems = {{ menu| tojson }};
+
+    var form = $('form');
+    var house = $('select#house');
+    var room = $('select#room');
+    var furniture = $('select#furniture');
+    var container = $('select#container');
+
+    for (var key in systems) {
+        house.append($('<option/>', { 'value': key, 'text': key }));
+    }
+
+    house.change(function (ev) {
+        room.empty();
+        room.append($('<option/>'));
+
+        var rooms = systems[house.val()];
+
+        for (var key in rooms) {
+            room.append($('<option/>', { 'value': key, 'text': key }));
+        }
+    }
+    );
+
+    room.change(function (ev) {
+        furniture.empty();
+        furniture.append($('<option/>'));
+
+        var furnitures = systems[house.val()][room.val()];
+
+        for (var key in furnitures) {
+            furniture.append($('<option/>', { 'value': key, 'text': key }))
+        }
+    });
+
+    furniture.change(function (ev) {
+        container.empty();
+        container.append($('<option/>'));
+
+        var containers = systems[house.val()][room.val()][furniture.val()];
+
+        for (var key in containers) {
+            name = containers[key]
+            container.append($('<option/>', { 'value': key, 'text': name }))
+        }
+    })
 
 </script>
 
