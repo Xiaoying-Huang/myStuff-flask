@@ -512,7 +512,8 @@ def add_stock():
 
     containers_dict = {}
     rows = db.execute(
-        "SELECT container_id, container_name, furniture_name, room_name, house_name FROM container JOIN furniture ON container.furniture_id=furniture.furniture_id JOIN room ON furniture.room_id=room.room_id JOIN house ON room.house_id=house.house_id ORDER BY house.house_id, room.room_id, furniture.furniture_id, container.container_id"
+        "SELECT container_id, container_name, furniture_name, room_name, house_name FROM container JOIN furniture ON container.furniture_id=furniture.furniture_id JOIN room ON furniture.room_id=room.room_id JOIN house ON room.house_id=house.house_id WHERE house.user_id=? ORDER BY house.house_id, room.room_id, furniture.furniture_id, container.container_id",
+        [current_user.id],
     ).fetchall()
 
     for row in rows:
@@ -745,6 +746,13 @@ def view_stock():
         pass
     else:
         return render_template("view_stock.html", stocks=stocks_dict)
+
+
+@app.route("/stock_info/<int:stock_id>")
+@login_required
+def stock_info(stock_id):
+    db = get_db_connection()
+    """ stock_info=db.execute("SELECT") """
 
 
 @app.route("/test", methods=["GET", "POST"])
