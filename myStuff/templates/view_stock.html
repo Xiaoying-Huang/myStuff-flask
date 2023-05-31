@@ -2,6 +2,10 @@
 {% block title %}View Stock{% endblock %}
 
 {% block body%}
+<div>
+    <input autocomplete='off' autofocus placeholder='Enter to search stock or container' type='text'>
+    <ul></ul>
+</div>
 <table class="table">
     <thead>
         <tr>
@@ -27,4 +31,19 @@
 <div>
     <p>Back to <a href=' /dashboard'>dashboard</a></p>
 </div>
+
+<script>
+    let input = document.querySelector('input');
+    input.addEventListener('input', async function () {
+        let response = await fetch('/search?q=' + input.value);
+        let search_result = await response.json();
+        let html = '';
+        for (let s in search_result) {
+            let stock_id = search_result[s].stock_id;
+            let stock_name = search_result[s].stock_name.replace('<', '&lt;').replace('&', '&amp;');
+            html += `<li><a href="/stock_info/${stock_id}">${stock_name}</a></li>`;
+        }
+        document.querySelector('ul').innerHTML = html;
+    });
+</script>
 {% endblock %}

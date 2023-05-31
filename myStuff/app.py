@@ -1,8 +1,9 @@
 import sqlite3
 
-import urllib.parse
+import json
 
-from flask import Flask, render_template, request, session, redirect, url_for
+from flask import Flask, render_template, request, session, redirect, url_for, jsonify
+
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from flask_login import (
@@ -746,6 +747,24 @@ def view_stock():
         pass
     else:
         return render_template("view_stock.html", stocks=stocks_dict)
+
+
+@app.route("/search")
+def search():
+    q = request.args.get("q")
+    db = get_db_connection()
+    if q:
+        word = "%" + q + "%"
+        search_result = db.execute(
+            "SELECT stock.stock_id, stock.stock_name, category.category, stock.note, container.container_name, furniture.furniture_name, room.room_name, house.house_name FROM stock_container JOIN stock ON stock.stock_id=stock_container.stock_id JOIN category ON category.category_id=stock.category_id JOIN container ON container.container_id=stock_container.container_id JOIN furniture ON furniture.furniture_id=container.furniture_id JOIN room ON room.room_id=furniture.room_id JOIN house ON house.house_id=room.house_id WHERE stock.user_id=? AND stock.stock_name LIKE ?",
+            (current_user.id, word),
+        ).fetchall()
+
+    else:
+        search_result = []
+    search_result_dict = [dict(row) for row in search_result]
+    # print(json.dumps(search_result_dict))
+    return json.dumps(search_result_dict)
 
 
 @app.route("/stock_info/<int:stock_id>")
