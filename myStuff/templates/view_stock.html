@@ -2,20 +2,29 @@
 {% block title %}View Stock{% endblock %}
 
 {% block body%}
-<table>
-    <tr>
-        <th>Stock name</th>
-        <th>Quantity</th>
-        <th>Container</th>
-        <th>Location</th>
-    </tr>
-    {% for stock in stocks%}
-    <tr>
-        <td>{{stocks[stock]["stock_name"]}}</td>
-        <td>{{stocks[stock]["quantity"]}}</td>
-        <td>{{stocks[stock]["container_name"]}}</td>
-        <td>{{stocks[stock]["house_name"]}}->{{stocks[stock]["room_name"]}}->{{stocks[stock]["furniture_name"]}}</td>
-    </tr>
-    {% endfor%}
+<table class="table">
+    <thead>
+        <tr>
+            <th scope="col">Stock name</th>
+            <th scope="col">Quantity</th>
+            <th scope="col">Container</th>
+            <th scope="col">Location</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for stock in stocks%}
+        <tr>
+            <th scope="row"><a href='/stock_info/{{stocks[stock]["stock_id"]}}'>{{stocks[stock]["stock_name"]}}</a></th>
+            <td>{{stocks[stock]["quantity"]}}</td>
+            <td>{{stocks[stock]["container_name"]}}</td>
+            <td>{{stocks[stock]["house_name"]}}->{{stocks[stock]["room_name"]}}->{{stocks[stock]["furniture_name"]}}
+            </td>
+        </tr>
+        {% endfor%}
+    </tbody>
 </table>
+
+<div>
+    <p>Back to <a href=' /dashboard'>dashboard</a></p>
+</div>
 {% endblock %}

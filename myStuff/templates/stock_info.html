@@ -1,0 +1,63 @@
+{% extends 'layout.html' %}
+{% block title %}Stock Info{% endblock %}
+{% block style %}
+<style>
+    table {
+        counter-reset: row-counter;
+    }
+
+    .counter-cell::before {
+        counter-increment: row-counter;
+        content: counter(row-counter);
+    }
+</style>
+{% endblock %}
+{% block body%}
+<table class='table'>
+    <tr>
+        <th scope="row">Stock id</th>
+        <td>{{stock_info[0]["stock_id"]}}</td>
+    </tr>
+    <tr>
+        <th scope="row">Stock name</th>
+        <td>{{stock_info[0]["stock_name"]}}</td>
+    </tr>
+    <tr>
+        <th scope="row">Category</th>
+        <td>{{stock_info[0]["category"]}}</td>
+    </tr>
+    <tr>
+        <th scope="row">Note</th>
+        <td>{{stock_info[0]["note"]}}</td>
+    </tr>
+</table>
+<h3>Stock distribution</h3>
+<table class='table'>
+    <thead>
+        <tr>
+            <th scope="col">#</th>
+            <th scope="col">Container</th>
+            <th scope="col">Furniture</th>
+            <th scope="col">Room</th>
+            <th scope="col">House</th>
+            <th scope="col">Quantity</th>
+        </tr>
+
+    </thead>
+    <tbody>
+        {% for key, item in stock_location.items() %}
+        <tr>
+            <td class="counter-cell" scope="row"></td>
+            <td>{{ item["container_name"] }}</td>
+            <td>{{ item["furniture_name"] }}</td>
+            <td>{{ item["room_name"] }}</td>
+            <td>{{ item["house_name"] }}</td>
+            <td>{{ item["quantity"] }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+<div>
+    <p>Back to <a href='/view_stock'>stock register</a></p>
+</div>
+{% endblock %}
