@@ -1,0 +1,171 @@
+{% extends 'layout.html' %}
+{% block title %}Test{% endblock %}
+{% block body%}
+
+<body>
+    <h1>Stock Items</h1>
+
+    <form method="post">
+        <ul id="stock-items">
+            {% for stock in stocks%}
+            <li value='{{stock}}'>Stock name: {{stocks[stock]["stock_name"]}}
+                <button class='add-btn'>Add</button>
+            </li>
+            {% endfor %}
+        </ul>
+
+
+
+        <h2>Selected Items</h2>
+
+        <ul id="selected-items">
+            <!-- Selected items will be added here -->
+        </ul>
+
+
+
+        <button type="submit" id="submit-btn">Submit</button>
+
+    </form>
+
+    <h1> Container List</h1>
+    {% for house_name, house_data in containers.items() %}
+    <ul id='containers-list'>
+        <li>{{ house_name }}</li>
+        {% for room_name, room_data in house_data.items() %}
+        <ul>
+            <li>{{ room_name }}</li>
+            {% for furniture_name, furniture_data in room_data.items() %}
+            <ul>
+                <li>{{ furniture_name }}</li>
+                <ul>
+                    {% for container_id, container_name in furniture_data.items() %}
+                    <li value='{{container_id}}'>{{ container_name }}
+                        <button type="button" class='add-btn'>Select</button>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </ul>
+            {% endfor %}
+        </ul>
+        {% endfor %}
+    </ul>
+    {% endfor %}
+
+    <h2>Selected container</h2>
+    <ul id='selected-container'>
+        <!-- Selected container goes here -->
+    </ul>
+
+    <script>
+        // Get references to the stock items list, selected items list, submit button, and containers list
+        const stockItemsList = document.getElementById('stock-items');
+        const selectedItemsList = document.getElementById('selected-items');
+        const submitButton = document.getElementById('submit-btn');
+
+        // Function to disable and enable add buttons
+        function toggleAddButton(button, disabled) {
+            button.disabled = disabled;
+        }
+
+        // Function to add selected stock item to the selected items list
+        function addSelectedItem(event) {
+            const listItem = event.target.parentNode;
+            const stockName = listItem.textContent.trim();
+
+            // Check if the item is already added to the selected items list
+            const selectedItems = selectedItemsList.querySelectorAll('li');
+            const itemAlreadyAdded = Array.from(selectedItems).some(
+                item => item.textContent.trim() === stockName
+            );
+
+            if (!itemAlreadyAdded) {
+                // Disable the "Add" button
+                const addButton = listItem.querySelector('.add-btn');
+                toggleAddButton(addButton, true);
+
+                // Create a delete button
+                const deleteButton = document.createElement('button');
+                deleteButton.textContent = 'Delete';
+
+                // Create a new list item
+                const selectedListItem = document.createElement('li');
+                selectedListItem.textContent = stockName;
+                selectedListItem.appendChild(deleteButton);
+
+                // Append the new list item to the selected items list
+                selectedItemsList.appendChild(selectedListItem);
+
+                // Add event listener to the delete button
+                deleteButton.addEventListener('click', function () {
+                    // Enable the "Add" button for the corresponding stock item
+                    toggleAddButton(addButton, false);
+
+                    // Remove the list item from the selected items list
+                    selectedListItem.remove();
+                });
+            }
+        }
+
+
+        // Get references to the containers list and selected container list
+        const containersList = document.getElementById('containers-list');
+        const selectedContainersList = document.getElementById('selected-container');
+
+        // Function to disable and enable select buttons
+        function toggleSelectButton(button, disabled) {
+            button.disabled = disabled;
+        }
+
+        // Function to add selected container to the selected container list
+        function addSelectedContainer(event) {
+            const listItem = event.target.parentNode;
+            const containerId = listItem.value;
+            const containerName = listItem.textContent.trim();
+
+            // Disable all select buttons in the containers list
+            const selectButtons = Array.from(containersList.querySelectorAll('.add-btn'));
+            selectButtons.forEach(button => toggleSelectButton(button, true));
+
+            // Create a remove button
+            const removeButton = document.createElement('button');
+            removeButton.textContent = 'Remove';
+
+            // Create a new list item
+            const selectedContainer = document.createElement('li');
+            selectedContainer.textContent = containerName;
+            selectedContainer.appendChild(removeButton);
+
+            // Append the new list item to the selected container list
+            selectedContainersList.appendChild(selectedContainer);
+
+            // Add event listener to the remove button
+            removeButton.addEventListener('click', function () {
+                // Remove the list item from the selected container list
+                selectedContainer.remove();
+
+                // Enable all select buttons in the containers list
+                selectButtons.forEach(button => toggleSelectButton(button, false));
+            });
+        }
+
+        // Add event listeners to the select buttons in the containers list
+        const selectButtons = Array.from(containersList.querySelectorAll('.add-btn'));
+        selectButtons.forEach(button => {
+            button.addEventListener('click', addSelectedContainer);
+        });
+
+
+        // Add event listeners to the add buttons in the stock items list
+        const addButtons = stockItemsList.querySelectorAll('.add-btn');
+        addButtons.forEach(button => {
+            button.addEventListener('click', addSelectedItem);
+        });
+
+
+    </script>
+</body>
+
+
+
+{% endblock %}

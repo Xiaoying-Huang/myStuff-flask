@@ -24,7 +24,7 @@
                 {% if furniture_data.containers %}
                 <ul id="container">
                     {% for container, container_data in furniture_data.containers.items() %}
-                    <li>{{ container }}</li>
+                    <li><a href='/container_info/{{container_data}}'>{{ container }}</a></li>
                     {% endfor %}
                 </ul>
                 {% endif %}

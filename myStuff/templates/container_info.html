@@ -1,0 +1,66 @@
+{% extends 'layout.html' %}
+{% block title %}Container Info{% endblock %}
+{% block style %}
+<style>
+    table {
+        counter-reset: row-counter;
+    }
+
+    .counter-cell::before {
+        counter-increment: row-counter;
+        content: counter(row-counter);
+    }
+</style>
+{% endblock %}
+{% block body%}
+<table class='table'>
+    <tr>
+        <th scope="row">Container id</th>
+        <td>{{container_info[0]["container_id"]}}</td>
+    </tr>
+    <tr>
+        <th scope="row">Container name</th>
+        <td>{{container_info[0]["container_name"]}}</td>
+    </tr>
+    <tr>
+        <th scope="row">Location</th>
+        <td>{{container_info[0]["house_name"]}}->{{container_info[0]["room_name"]}}->{{container_info[0]["furniture_name"]}}
+        </td>
+    </tr>
+</table>
+<h3>Stock items within the container</h3>
+<table class='table'>
+    <thead>
+        <tr>
+            <th scope="col">#</th>
+            <th scope="col">Stock id</th>
+            <th scope="col">Stock name</th>
+            <th scope="col">Category</th>
+            <th scope="col">Note</th>
+            <th scope="col">Quantity</th>
+        </tr>
+
+    </thead>
+    <tbody>
+        {% if container_items == {} %}
+        <tr>
+            <td colspan='6'>Currently there is no item within this container.</td>
+        </tr>
+        {% else %}
+        {% for key, item in container_items.items() %}
+        <tr>
+            <td class="counter-cell" scope="row"></td>
+            <td>{{ item["stock_id"] }}</td>
+            <td>{{ item["stock_name"] }}</td>
+            <td>{{ item["category"] }}</td>
+            <td>{{ item["note"] }}</td>
+            <td>{{ item["quantity"] }}</td>
+        </tr>
+        {% endfor %}
+        {% endif %}
+    </tbody>
+</table>
+<div>
+    <p>Back to <a href='/storage_plan'>storage plan</a></p>
+</div>
+{% endblock %}

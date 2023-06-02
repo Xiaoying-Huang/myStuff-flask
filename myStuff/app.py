@@ -628,87 +628,6 @@ def add_stock():
         )
 
 
-@app.route("/assign_stock", methods=["GET", "POST"])
-@login_required
-def assign_stock():
-    db = get_db_connection()
-
-    containers_dict = {}
-    rows = db.execute(
-        "SELECT container_id, container_name, furniture_name, room_name, house_name FROM container JOIN furniture ON container.furniture_id=furniture.furniture_id JOIN room ON furniture.room_id=room.room_id JOIN house ON room.house_id=house.house_id ORDER BY house.house_id, room.room_id, furniture.furniture_id, container.container_id"
-    ).fetchall()
-
-    for row in rows:
-        container_id, container_name, furniture_name, room_name, house_name = row
-        # create containers_dict
-        if house_name not in containers_dict:
-            containers_dict[house_name] = {}
-        if room_name not in containers_dict[house_name]:
-            containers_dict[house_name][room_name] = {}
-        if furniture_name not in containers_dict[house_name][room_name]:
-            containers_dict[house_name][room_name][furniture_name] = {}
-        if container_id not in containers_dict[house_name][room_name][furniture_name]:
-            containers_dict[house_name][room_name][furniture_name][
-                container_id
-            ] = container_name
-
-    # print(containers_dict)
-
-    # stock items
-    stocks = db.execute(
-        "SELECT stock_id, stock_name, category, note FROM stock JOIN category ON stock.category_id=category.category_id AND stock.user_id = ?",
-        [current_user.id],
-    ).fetchall()
-
-    # create stocks_dict
-    stocks_dict = {}
-    for stock in stocks:
-        stock_id, stock_name, category, note = stock
-
-        if stock_id not in stocks_dict:
-            stocks_dict[stock_id] = {
-                "stock_name": stock_name,
-                "category": category,
-                "note": note,
-            }
-    # print(stocks_dict)
-
-    if request.method == "POST":
-        if request.form.get("stock_assign") == "multi_stock_items":
-            selected_container = request.form.get("container")
-            print("selected_container", selected_container)
-            selected_stocks = request.form.getlist("stock_item")
-            print("selected stocks", selected_stocks)
-            message = ""
-            for selected_stock in selected_stocks:
-                db.execute(
-                    "INSERT INTO stock_container(stock_id, container_id, quantity) VALUES (?, ?,?)",
-                    (
-                        selected_stock,
-                        selected_container,
-                        request.form.get(f"quantity_{selected_stock}"),
-                    ),
-                )
-                selected_stock = int(selected_stock)
-                db.commit()
-                print("quantity", request.form.get(f"quantity_{selected_stock}"))
-                message += f"""Successfully assigned "{stocks_dict[selected_stock]["stock_name"]}" to {containers_dict[request.form.get("house")][request.form.get("room")][request.form.get("furniture")][int(selected_container)]} in the quantity of {request.form.get(f"quantity_{selected_stock}")}! """
-
-            return render_template(
-                "assign_stock.html",
-                containers_dict=containers_dict,
-                stocks_dict=stocks_dict,
-                message=message,
-            )
-    else:
-        return render_template(
-            "assign_stock.html",
-            containers_dict=containers_dict,
-            stocks_dict=stocks_dict,
-            message="",
-        )
-
-
 @app.route("/view_stock", methods=["GET", "POST"])
 @login_required
 def view_stock():
@@ -804,6 +723,56 @@ def stock_info(stock_id):
             }
     return render_template(
         "stock_info.html", stock_info=stock_info, stock_location=stock_location
+    )
+
+
+
+@app.route("/container_info/<int:container_id>")
+@login_required
+def container_info(container_id):
+    db = get_db_connection()
+    container_info = db.execute(
+        "SELECT stock_container.stock_container_id, stock_container.container_id, stock.stock_id, stock.stock_name, category.category, stock.note, container.container_name, furniture.furniture_name, room.room_name, house.house_name, stock_container.quantity FROM stock_container JOIN stock ON stock.stock_id=stock_container.stock_id JOIN category ON category.category_id=stock.category_id JOIN container ON container.container_id=stock_container.container_id JOIN furniture ON furniture.furniture_id=container.furniture_id JOIN room ON room.room_id=furniture.room_id JOIN house ON house.house_id=room.house_id WHERE stock_container.container_id=?",
+        [container_id],
+    ).fetchall()
+    container_items = {}
+    for row in container_info:
+        (
+            stock_container_id,
+            container_id,
+            stock_id,
+            stock_name,
+            category,
+            note,
+            container_name,
+            furniture_name,
+            room_name,
+            house_name,
+            quantity,
+        ) = row
+        if stock_container_id not in container_items:
+            container_items[stock_container_id] = {
+                "container_id": container_id,
+                "stock_id": stock_id,
+                "stock_name": stock_name,
+                "category": category,
+                "note": note,
+                "container_name": container_name,
+                "furniture_name": furniture_name,
+                "room_name": room_name,
+                "house_name": house_name,
+                "quantity": quantity,
+            }
+    if container_info == []:
+        container_info = db.execute(
+            "SELECT * FROM container JOIN furniture ON furniture.furniture_id=container.furniture_id JOIN room ON room.room_id=furniture.room_id JOIN house ON house.house_id=room.house_id WHERE container_id = ?",
+            [container_id],
+        ).fetchall()
+
+    return render_template(
+        "container_info.html",
+        container_info=container_info,
+        container_items=container_items,
     )
 
 
