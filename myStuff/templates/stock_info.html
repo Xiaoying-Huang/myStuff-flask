@@ -13,6 +13,37 @@
 </style>
 {% endblock %}
 {% block body%}
+{% if edit_mode %}
+<form method="POST" action="/update_stock_info/{{ stock_info[0]['stock_id'] }}">
+    <table class='table'>
+        <tr>
+            <th scope="row">Stock id</th>
+            <td>{{stock_info[0]["stock_id"]}}</td>
+        </tr>
+        <tr>
+            <th scope="row">Stock name</th>
+            <td><input type='text' name='new_stock_name' value='{{stock_info[0]["stock_name"]}}'></td>
+        </tr>
+        <tr>
+            <th scope="row">Category</th>
+            <td>
+                <select name='new_category'>
+                    <option value='{{stock_info[0]["category_id"]}}' selected>{{stock_info[0]["category"]}}</option>
+                    {% for key in categories_dict %}
+                    <option value='{{categories_dict[key]}}'>{{key}}
+                    </option>
+                    {% endfor %}
+                </select>
+            </td>
+        </tr>
+        <tr>
+            <th scope="row">Note</th>
+            <td><input type='text' name='new_note' value='{{stock_info[0]["note"]}}'></td>
+        </tr>
+    </table>
+    <input type="submit" />
+</form>
+{% else %}
 <table class='table'>
     <tr>
         <th scope="row">Stock id</th>
@@ -31,7 +62,9 @@
         <td>{{stock_info[0]["note"]}}</td>
     </tr>
 </table>
+
 <a href='/edit_stock/{{stock_info[0]["stock_id"]}}'>Edit stock</a>
+
 <h3>Stock distribution</h3>
 <table class='table'>
     <thead>
@@ -58,6 +91,7 @@
         {% endfor %}
     </tbody>
 </table>
+{% endif %}
 <div>
     <p>Back to <a href='/view_stock'>stock register</a></p>
 </div>

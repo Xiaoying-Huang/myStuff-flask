@@ -726,6 +726,79 @@ def stock_info(stock_id):
     )
 
 
+@app.route("/edit_stock/<int:stock_id>")
+@login_required
+def edit_stock(stock_id):
+    db = get_db_connection()
+    stock_info = db.execute(
+        "SELECT stock_container.stock_container_id, stock.stock_id, stock.stock_name, category.category_id, category.category, stock.note, container.container_name, furniture.furniture_name, room.room_name, house.house_name, stock_container.quantity FROM stock_container JOIN stock ON stock.stock_id=stock_container.stock_id JOIN category ON category.category_id=stock.category_id JOIN container ON container.container_id=stock_container.container_id JOIN furniture ON furniture.furniture_id=container.furniture_id JOIN room ON room.room_id=furniture.room_id JOIN house ON house.house_id=room.house_id WHERE stock.stock_id=?",
+        [stock_id],
+    ).fetchall()
+
+    stock_location = {}
+    for row in stock_info:
+        (
+            stock_container_id,
+            stock_id,
+            stock_name,
+            category_id,
+            category,
+            note,
+            container_name,
+            furniture_name,
+            room_name,
+            house_name,
+            quantity,
+        ) = row
+        if stock_container_id not in stock_location:
+            stock_location[stock_container_id] = {
+                "stock_id": stock_id,
+                "stock_name": stock_name,
+                "category_id": category_id,
+                "category": category,
+                "note": note,
+                "container_name": container_name,
+                "furniture_name": furniture_name,
+                "room_name": room_name,
+                "house_name": house_name,
+                "quantity": quantity,
+            }
+        categories_to_select = db.execute(
+            "SELECT category, category_id FROM category WHERE user_id = ?",
+            [current_user.id],
+        ).fetchall()
+        categories_dict = {}
+        for row in categories_to_select:
+            category_id, category = row
+            if category_id not in categories_dict:
+                categories_dict[category_id] = category
+    return render_template(
+        "stock_info.html",
+        stock_info=stock_info,
+        stock_location=stock_location,
+        categories_dict=categories_dict,
+        edit_mode=True,
+    )
+
+
+@app.route("/update_stock_info/<int:stock_id>", methods=["POST"])
+@login_required
+def update_stock_info(stock_id):
+    new_stock_name = request.form.get("new_stock_name")
+    new_note = request.form.get("new_note")
+    new_category = request.form.get("new_category")
+    db = get_db_connection()
+    db.execute(
+        "UPDATE stock SET stock_name = ? , note = ?, category_id=? WHERE stock_id = ?",
+        (new_stock_name, new_note, new_category, stock_id),
+    )
+    db.commit()
+
+    # Update the stock info in the database using the provided values
+
+    # Redirect to the stock info page
+    return redirect(f"/stock_info/{stock_id}")
+
 
 @app.route("/container_info/<int:container_id>")
 @login_required
