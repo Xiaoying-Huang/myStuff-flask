@@ -9,56 +9,64 @@
 
 {% endblock %}
 
-{% block body%}
+{% block content %}
 <div id='addSTock'>
     <p> Add new stock item</p>
     <form id='stock_info' method='post'>
-        <label for='stock_name'>Stock name</label>
-        <input type='text' name='stock_name' placeholder='Enter stock name here' required>
-        <br>
-        <label for='note'>Note</label>
-        <input type='text' name='note' id="note" placeholder='Additional notes for the stock item'>
-        <br>
-        <label for='category_select'>Category</label>
-        <br>
-        <select name="category" id="category" aria-label='category' onchange='toggleNewCategory()' required>
-            <option value="" disabled selected>Select stock category</option>
-            {% for key in categories_dict %}
-            <option value='{{key}}'>{{categories_dict[key]}}</option>
-            {% endfor %}
-            <option value='newCategory'>Add new categories</option>
-        </select>
-        <br>
-        <label for='quantity'>Quantity</label>
-        <input type='number' name='quantity' id='quantity' placeholder='Quantity'>
-        <p>Location</p>
-        <label for='house'>House</label>
-        <select name='hosue' id='house' aria-label='house'>
-            <option></option>
-        </select>
-        <label for='room'>
-            Room
-        </label>
-        <select name="room" id="room"></select>
-        <label for='furniture'>Furniture</label>
-        <select name='furniture' id='furniture'></select>
-        <label for="container">Container</label>
-        <select name='container' id='container'></select>
-        <br>
-        <button type="submit" name='stock_submit'>Add stock</button>
+        <div class="mb-3">
+            <label for='stock_name'>Stock name</label>
+            <input type='text' name='stock_name' placeholder='Enter stock name here' required>
+        </div>
+        <div class="mb-3">
+            <label for='note'>Note</label>
+            <input type='text' name='note' id="note" placeholder='Additional notes for the stock item'>
+        </div>
+        <div class="mb-3">
+            <label for='category_select'>Category</label>
+            <select class="form-select" name="category" id="category" aria-label='category'
+                onchange='toggleNewCategory()' required>
+                <option value="" disabled selected>Select stock category</option>
+                {% for key in categories_dict %}
+                <option value='{{key}}'>{{categories_dict[key]}}</option>
+                {% endfor %}
+                <option value='newCategory'>Add new categories</option>
+            </select>
+        </div>
+        <div class="mb-3">
+            <label for='quantity'>Quantity</label>
+            <input type='number' name='quantity' id='quantity' placeholder='Quantity'>
+        </div>
+        <div class="mb-3">
+            <p>Location</p>
+            <label for='house'>House</label>
+            <select class="form-select" name='hosue' id='house' aria-label='house'>
+                <option></option>
+            </select>
+            <label for='room'>
+                Room
+            </label>
+            <select class="form-select" name="room" id="room"></select>
+            <label for='furniture'>Furniture</label>
+            <select class="form-select" name='furniture' id='furniture'></select>
+            <label for="container">Container</label>
+            <select class="form-select" name='container' id='container'></select>
+        </div>
+        <button type="submit" name='stock_submit' class="btn btn-outline-primary">Add stock</button>
     </form>
 </div>
 
 <div id='addCategory'>
     <p>Add new stock category</p>
     <form id='new_cat' method='post'>
-        <label for='category_name'>New Category Name</label>
-        <input type='text' name='category_name' required>
-        <br>
-        <label for='description'>Description</label>
-        <input type='text' name='description' required>
-        <br>
-        <button type='submit' name='cat_submit'>Add new category</button>
+        <div class="mb-3">
+            <label for='category_name'>New Category Name</label>
+            <input type='text' name='category_name' required>
+        </div>
+        <div class="mb-3">
+            <label for='description'>Description</label>
+            <input type='text' name='description' required>
+        </div>
+        <button type='submit' name='cat_submit' class="btn btn-outline-primary">Add new category</button>
     </form>
 </div>
 

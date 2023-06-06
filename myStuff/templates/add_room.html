@@ -1,25 +1,31 @@
 {% extends 'layout.html' %}
 {% block title %}Add a room{% endblock %}
 
-{% block body%}
+{% block content %}
 <div>
     <h2>Add a new room</h2>
     <p>Please select a house in which you're going to add a new room.</p>
     <form method='post'>
-        <label for='house_name'>House name</label>
-        <select name='house_select' required>
-            <option value="" disabled selected>Select a house</option>
-            {% for i in range(house_len)%}
-            <option value='{{houses[i]["house_id"]}}'>{{houses[i]["house_name"]}}</option>
-            {% endfor %}
-        </select>
-        <label for='room_name'>Room name</label>
-        <input type="text" id='room_name' name='room_name'>
-        <input type='submit' value='Add room' name='add_room'>
+        <div class="mb-3">
+            <label for='house_name'>House name</label>
+            <select class="form-select" name='house_select' required>
+                <option value="" disabled selected>Select a house</option>
+                {% for i in range(house_len)%}
+                <option value='{{houses[i]["house_id"]}}'>{{houses[i]["house_name"]}}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="mb-3">
+            <label for='room_name'>Room name</label>
+            <input type="text" id='room_name' name='room_name'>
+            <input type='submit' value='Add room' name='add_room' class="btn btn-outline-primary">
+        </div>
+
     </form>
     <p>{{message_room}}</p>
 </div>
 <div>
     <p>Back to <a href='/storage_plan'>storage plan</a></p>
 </div>
-{% endblock %} 
+{% endblock %}

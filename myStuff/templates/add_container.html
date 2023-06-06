@@ -1,31 +1,32 @@
 {% extends 'layout.html' %}
 {% block title %}Add container{% endblock %}
 
-{% block body%}
+{% block content%}
 <h2>Add a new container</h2>
 
 <div>
-<form method='post'>
-    <label for='house'>Select the house where you want to add a new container</label>
-    <br>
-    <select id="house" name='house' required>
-        <option></option>
-    </select>
-    <br>
-    <label for='room'>Select the room where you want to add a new container</label>
-    <br>
-    <select id="room" name='room' required></select>
-    <br>
-    <label for='furniture'>Select the furniture where you want to put the new container</label>
-    <br>
-    <select id="furniture" name='furniture' required></select>
-    <br>
-    <label for='container'>Please enter the name of the container you wish to add</label>
-    <br>
-    <input id='container' type='text' name='container'>
-    <button type="submit">Add container</button>
-</form>
-<p>{{message}}</p>
+    <form method='post'>
+        <div class="mb-3">
+            <label for='house'>Select the house where you want to add a new container</label>
+            <select class="form-select" id="house" name='house' required>
+                <option></option>
+            </select>
+        </div>
+        <div class="mb-3">
+            <label for='room'>Select the room where you want to add a new container</label>
+            <select class="form-select" id="room" name='room' required></select>
+        </div>
+        <div class="mb-3">
+            <label for='furniture'>Select the furniture where you want to put the new container</label>
+            <select class="form-select" id="furniture" name='furniture' required></select>
+        </div>
+        <div class="mb-3">
+            <label for='container'>Please enter the name of the container you wish to add</label>
+            <input id='container' type='text' name='container'>
+        </div>
+        <button class="btn btn-outline-primary" type="submit">Add container</button>
+    </form>
+    <p>{{message}}</p>
 </div>
 
 <div>
@@ -36,43 +37,43 @@
 <script>
     "use strict";
 
-    var systems = {{ menu|tojson }};
+    var systems = {{ menu| tojson }};
 
     var form = $('form');
     var house = $('select#house');
     var room = $('select#room');
-    var furniture=$('select#furniture');
+    var furniture = $('select#furniture');
 
     for (var key in systems) {
-        house.append($('<option/>', {'value': key, 'text': key}));
+        house.append($('<option/>', { 'value': key, 'text': key }));
     }
 
-    house.change(function(ev) {
+    house.change(function (ev) {
         room.empty();
         room.append($('<option/>'));
 
         var rooms = systems[house.val()]["rooms"];
 
         for (var key in rooms) {
-            room.append($('<option/>', {'value': key, 'text': key}));
+            room.append($('<option/>', { 'value': key, 'text': key }));
         }
     }
     );
 
-    room.change(function(ev){
+    room.change(function (ev) {
         furniture.empty();
         furniture.append($('<option/>'));
 
-        var furnitures=systems[house.val()]["rooms"][room.val()]["furniture"];
+        var furnitures = systems[house.val()]["rooms"][room.val()]["furniture"];
 
-        for (var key in furnitures){
-            name=furnitures[key]
-            furniture.append($('<option/>',{'value': key, 'text': name}))
+        for (var key in furnitures) {
+            name = furnitures[key]
+            furniture.append($('<option/>', { 'value': key, 'text': name }))
         }
     });
-    
+
 
 </script>
 
 
-{% endblock %} 
+{% endblock %}

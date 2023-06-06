@@ -1,17 +1,17 @@
 {% extends 'layout.html' %}
 {% block title %}Add a house{% endblock %}
 
-{% block body%}
+{% block content%}
 <div>
     <h2>Add a new house</h2>
     <form method='post'>
         <label for='house_name'>House name</label>
         <input type='text' id='house_name' name='house_name'>
-        <input type='submit' value='Add house' name='add_house'>
+        <input type='submit' value='Add house' name='add_house' class="btn btn-outline-primary">
     </form>
     <p>{{message_house}}</p>
 </div>
 <div>
     <p>Back to <a href='/storage_plan'>storage plan</a></p>
 </div>
-{% endblock %} 
+{% endblock %}

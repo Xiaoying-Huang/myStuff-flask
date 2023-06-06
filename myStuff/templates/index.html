@@ -1,11 +1,11 @@
 {% extends 'layout.html' %}
 {% block title %}Home{% endblock %}
-{% block body %}
-<h1>Welcome to myStuff app!</h1>
+{% block content %}
+<h1>Welcome to <span style="font-family: 'Segoe Script', cursive;">myStuff</span> app!</h1>
 <p>Please log in to access all the features:</p>
-    <a href='/login'>Log in</a>
+<a href='/login' class="btn btn-outline-primary">Log in</a>
 
 <p>If you don't have an account yet, please first register:</p>
-	<a href="/register">Register</a>
+<a href="/register" class="btn btn-outline-primary">Register</a>
 
 {% endblock %}

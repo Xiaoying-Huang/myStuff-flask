@@ -12,7 +12,7 @@
     }
 </style>
 {% endblock %}
-{% block body%}
+{% block content %}
 {% if edit_mode %}
 <form method="POST" action="/update_stock_info/{{ stock_info[0]['stock_id'] }}">
     <table class='table'>

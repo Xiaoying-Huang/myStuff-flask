@@ -1,16 +1,26 @@
 {% extends 'layout.html' %}
 {% block title %}Dashboard{% endblock %}
-{% block body %}
+{% block style %}
+<style>
+    ul li {
+        list-style-type: none;
+    }
+
+    li {
+        margin: 5px;
+    }
+</style>
+{% endblock %}
+{% block content %}
 <h1>Welcome, {{username}}</h1>
 <p>Please select from the following menu:</p>
 <ul>
-    <li><a href='/storage_plan'>Create a storage plan</a></li>
-    <li><a href='/view_stock'>View stock register</a></li>
-    <li><a href='/add_stock/new'>Add a new stock item</a></li>
+    <li><a href='/storage_plan' class="btn btn-outline-primary">Create a storage plan</a></li>
+    <li><a href='/view_stock' class="btn btn-outline-primary">View stock register</a></li>
+    <li><a href='/add_stock/new' class="btn btn-outline-primary">Add a new stock item</a></li>
 </ul>
 
 
-<a href='/test'>Test</a>
 <p>
     If you're not {{username}}, please <a href='/logout'>log out</a>.
     {% endblock %}
