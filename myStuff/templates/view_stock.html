@@ -18,16 +18,23 @@
                 <th scope="col">Quantity</th>
                 <th scope="col">Container</th>
                 <th scope="col">Location</th>
+                <th scope="col">Actions</th>
             </tr>
         </thead>
         <tbody>
-            {% for stock in stocks%}
+            {% for stock_container_id, stock in stocks.items() %}
             <tr>
-                <th scope="row"><a href='/stock_info/{{stocks[stock]["stock_id"]}}'>{{stocks[stock]["stock_name"]}}</a>
+                <th scope="row"><a href='/stock_info/{{stock["stock_id"]}}'>{{stock["stock_name"]}}</a>
                 </th>
-                <td>{{stocks[stock]["quantity"]}}</td>
-                <td>{{stocks[stock]["container_name"]}}</td>
-                <td>{{stocks[stock]["house_name"]}}->{{stocks[stock]["room_name"]}}->{{stocks[stock]["furniture_name"]}}
+                <td>{{stock["quantity"]}}</td>
+                <td>{{stock["container_name"]}}</td>
+                <td>{{stock["house_name"]}}->{{stock["room_name"]}}->{{stock["furniture_name"]}}
+                </td>
+                <td>
+                    <form method="POST" action="/delete_stock/{{ stock_container_id }}">
+                        <button type="submit" class="btn btn-danger"
+                            onclick="confirmDeletion('{{ stock_id }}')">Delete</button>
+                    </form>
                 </td>
             </tr>
             {% endfor%}
@@ -54,5 +61,6 @@
         }
         searchResults.innerHTML = html;
     });
+
 </script>
 {% endblock %}

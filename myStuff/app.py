@@ -2,7 +2,7 @@ import sqlite3
 
 import json
 
-from flask import Flask, render_template, request, session, redirect, url_for, jsonify
+from flask import Flask, render_template, request, session, redirect, url_for, flash
 
 from werkzeug.security import check_password_hash, generate_password_hash
 
@@ -798,6 +798,19 @@ def update_stock_info(stock_id):
 
     # Redirect to the stock info page
     return redirect(f"/stock_info/{stock_id}")
+
+
+@app.route("/delete_stock/<int:stock_container_id>", methods=["POST"])
+@login_required
+def delete_stock(stock_container_id):
+    db = get_db_connection()
+    db.execute(
+        "DELETE FROM stock_container WHERE stock_container_id = ?",
+        [stock_container_id],
+    )
+    db.commit()
+
+    return redirect("/view_stock")
 
 
 @app.route("/container_info/<int:container_id>")
