@@ -10,6 +10,14 @@
         counter-increment: row-counter;
         content: counter(row-counter);
     }
+
+    ul li {
+        list-style-type: none;
+    }
+
+    li {
+        margin: 5px;
+    }
 </style>
 {% endblock %}
 {% block content %}
@@ -63,8 +71,6 @@
     </tr>
 </table>
 
-<a href='/edit_stock/{{stock_info[0]["stock_id"]}}'>Edit stock</a>
-
 <h3>Stock distribution</h3>
 <table class='table'>
     <thead>
@@ -82,7 +88,7 @@
         {% for key, item in stock_location.items() %}
         <tr>
             <td class="counter-cell" scope="row"></td>
-            <td>{{ item["container_name"] }}</td>
+            <td><a href='/container_info/{{item["container_id"]}}'>{{ item["container_name"] }}</a></td>
             <td>{{ item["furniture_name"] }}</td>
             <td>{{ item["room_name"] }}</td>
             <td>{{ item["house_name"] }}</td>
@@ -91,6 +97,17 @@
         {% endfor %}
     </tbody>
 </table>
+<ul>
+    <li>
+        <a href='/edit_stock/{{stock_info[0]["stock_id"]}}' class="btn btn-outline-primary">Edit stock</a>
+    </li>
+    <li>
+        <a href='/add_existing_stock/{{stock_info[0]["stock_id"]}}' class="btn btn-outline-primary">Add more of this
+            item</a>
+    </li>
+
+</ul>
+
 {% endif %}
 <div>
     <p>Back to <a href='/view_stock'>stock register</a></p>

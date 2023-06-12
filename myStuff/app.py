@@ -628,7 +628,53 @@ def add_stock():
         )
 
 
-@app.route("/view_stock", methods=["GET", "POST"])
+@app.route("/add_existing_stock/<int:stock_id>", methods=["GET", "POST"])
+@login_required
+def add_existing_stock(stock_id):
+    db = get_db_connection()
+    stock_info = db.execute(
+        "SELECT stock_container.stock_container_id, stock.stock_id, stock.stock_name, category.category_id, category.category, stock.note, container.container_name, furniture.furniture_name, room.room_name, house.house_name, stock_container.quantity FROM stock_container JOIN stock ON stock.stock_id=stock_container.stock_id JOIN category ON category.category_id=stock.category_id JOIN container ON container.container_id=stock_container.container_id JOIN furniture ON furniture.furniture_id=container.furniture_id JOIN room ON room.room_id=furniture.room_id JOIN house ON house.house_id=room.house_id WHERE stock.stock_id=?",
+        [stock_id],
+    ).fetchall()
+
+    containers_info = db.execute(
+        "SELECT container_id, container_name, furniture_name, room_name, house_name FROM container JOIN furniture ON container.furniture_id=furniture.furniture_id JOIN room ON furniture.room_id=room.room_id JOIN house ON room.house_id=house.house_id WHERE house.user_id=? ORDER BY house.house_id, room.room_id, furniture.furniture_id, container.container_id",
+        [current_user.id],
+    ).fetchall()
+
+    containers_dict = {}
+    for row in containers_info:
+        container_id, container_name, furniture_name, room_name, house_name = row
+        # create containers_dict
+        if house_name not in containers_dict:
+            containers_dict[house_name] = {}
+        if room_name not in containers_dict[house_name]:
+            containers_dict[house_name][room_name] = {}
+        if furniture_name not in containers_dict[house_name][room_name]:
+            containers_dict[house_name][room_name][furniture_name] = {}
+        if container_id not in containers_dict[house_name][room_name][furniture_name]:
+            containers_dict[house_name][room_name][furniture_name][
+                container_id
+            ] = container_name
+
+    if request.method == "POST":
+        db.execute(
+            "INSERT INTO stock_container(stock_id, container_id, quantity) VALUES(?, ?, ?)",
+            (
+                stock_id,
+                request.form.get("container"),
+                request.form.get("quantity"),
+            ),
+        )
+        db.commit()
+        return redirect(f"/stock_info/{stock_id}")
+    else:
+        return render_template(
+            "add_existing_item.html", stock_info=stock_info, menu=containers_dict
+        )
+
+
+@app.route("/view_stock")
 @login_required
 def view_stock():
     db = get_db_connection()
@@ -660,12 +706,9 @@ def view_stock():
                 "room_name": room_name,
                 "house_name": house_name,
             }
-    # print(stocks_dict)
+        # print(stocks_dict)
 
-    if request.method == "POST":
-        pass
-    else:
-        return render_template("view_stock.html", stocks=stocks_dict)
+    return render_template("view_stock.html", stocks=stocks_dict)
 
 
 @app.route("/search")
@@ -691,7 +734,7 @@ def search():
 def stock_info(stock_id):
     db = get_db_connection()
     stock_info = db.execute(
-        "SELECT stock_container.stock_container_id, stock.stock_id, stock.stock_name, category.category, stock.note, container.container_name, furniture.furniture_name, room.room_name, house.house_name, stock_container.quantity FROM stock_container JOIN stock ON stock.stock_id=stock_container.stock_id JOIN category ON category.category_id=stock.category_id JOIN container ON container.container_id=stock_container.container_id JOIN furniture ON furniture.furniture_id=container.furniture_id JOIN room ON room.room_id=furniture.room_id JOIN house ON house.house_id=room.house_id WHERE stock.stock_id=?",
+        "SELECT stock_container.stock_container_id, stock.stock_id, stock.stock_name, category.category, stock.note, container.container_id, container.container_name, furniture.furniture_name, room.room_name, house.house_name, stock_container.quantity FROM stock_container JOIN stock ON stock.stock_id=stock_container.stock_id JOIN category ON category.category_id=stock.category_id JOIN container ON container.container_id=stock_container.container_id JOIN furniture ON furniture.furniture_id=container.furniture_id JOIN room ON room.room_id=furniture.room_id JOIN house ON house.house_id=room.house_id WHERE stock.stock_id=?",
         [stock_id],
     ).fetchall()
 
@@ -703,6 +746,7 @@ def stock_info(stock_id):
             stock_name,
             category,
             note,
+            container_id,
             container_name,
             furniture_name,
             room_name,
@@ -715,6 +759,7 @@ def stock_info(stock_id):
                 "stock_name": stock_name,
                 "category": category,
                 "note": note,
+                "container_id": container_id,
                 "container_name": container_name,
                 "furniture_name": furniture_name,
                 "room_name": room_name,

@@ -51,7 +51,7 @@
         <tr>
             <td class="counter-cell" scope="row"></td>
             <td>{{ item["stock_id"] }}</td>
-            <td>{{ item["stock_name"] }}</td>
+            <td><a href='/stock_info/{{ item["stock_id"] }}'>{{ item["stock_name"] }}</a></td>
             <td>{{ item["category"] }}</td>
             <td>{{ item["note"] }}</td>
             <td>{{ item["quantity"] }}</td>
