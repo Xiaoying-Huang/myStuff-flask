@@ -858,7 +858,7 @@ def delete_stock(stock_container_id):
     return redirect("/view_stock")
 
 
-@app.route("/container_info/<int:container_id>")
+@app.route("/container_info/<int:container_id>", methods=["GET", "POST"])
 @login_required
 def container_info(container_id):
     db = get_db_connection()
@@ -900,8 +900,123 @@ def container_info(container_id):
             [container_id],
         ).fetchall()
 
+    categories = db.execute(
+        "SELECT category, category_id FROM category WHERE user_id =?", [current_user.id]
+    ).fetchall()
+
+    categories_dict = {}
+    for row in categories:
+        category, category_id = row
+        if category_id not in categories_dict:
+            categories_dict[category_id] = category
+
+    existing_stocks = db.execute(
+        "SELECT stock_id, stock_name, stock.category_id, category.category, note FROM stock JOIN category ON stock.category_id=category.category_id WHERE stock.user_id = ?",
+        [current_user.id],
+    ).fetchall()
+
+    existing_stock_dict = {}
+
+    for row in existing_stocks:
+        stock_id, stock_name, category_id, category_name, note = row
+        if stock_id not in existing_stock_dict:
+            existing_stock_dict[stock_id] = {
+                "stock_name": stock_name,
+                "category_id": category_id,
+                "category_name": category_name,
+                "note": note,
+            }
+
     return render_template(
         "container_info.html",
         container_info=container_info,
         container_items=container_items,
+        categories_dict=categories_dict,
+        existing_stock_dict=existing_stock_dict,
     )
+
+
+@app.route("/add_to_container/<int:container_id>", methods=["GET", "POST"])
+@login_required
+def add_to_container(container_id):
+    db = get_db_connection()
+
+    if request.method == "POST":
+        # add category
+        if "cat_submit" in request.form:
+            # name check
+            cat_name_search = db.execute(
+                "SELECT COUNT(*) FROM category WHERE category = ? AND user_id=?",
+                (request.form.get("category_name"), current_user.id),
+            ).fetchall()
+            if cat_name_search[0]["COUNT(*)"] > 0:
+                flash("Duplicated category name. Please use another category name.")
+                return redirect(f"/container_info/{container_id}")
+
+            else:
+                db.execute(
+                    "INSERT INTO category (category, description, user_id) VALUES (?, ?, ?)",
+                    (
+                        request.form.get("category_name"),
+                        request.form.get("description"),
+                        current_user.id,
+                    ),
+                )
+                db.commit()
+
+                flash("Successfully added a new category.")
+                return redirect(f"/container_info/{container_id}")
+
+        # add new stock items
+        if "new_stock_submit" in request.form:
+            # Duplicate name check
+            stock_name_search = db.execute(
+                "SELECT COUNT(*) FROM stock WHERE stock_name = ? and user_id=?",
+                (request.form.get("stock_name"), current_user.id),
+            ).fetchall()
+
+            if stock_name_search[0]["COUNT(*)"] > 0:
+                return redirect(f"/container_info/{container_id}")
+            else:
+                db.execute(
+                    "INSERT INTO stock(stock_name, category_id, note, user_id) VALUES(?,?,?,?)",
+                    (
+                        request.form.get("stock_name"),
+                        request.form.get("category"),
+                        request.form.get("note"),
+                        current_user.id,
+                    ),
+                )
+                db.commit()
+                stock_id = db.execute(
+                    "SELECT stock_id from stock WHERE stock_name = ? AND user_id =?",
+                    (request.form.get("stock_name"), current_user.id),
+                ).fetchall()[0]["stock_id"]
+                db.execute(
+                    "INSERT INTO stock_container(stock_id, container_id, quantity) VALUES(?, ?, ?)",
+                    (
+                        stock_id,
+                        container_id,
+                        request.form.get("quantity"),
+                    ),
+                )
+                db.commit()
+
+            flash("Successfully added a new stock item.")
+            return redirect(f"/container_info/{container_id}")
+
+        if "existing_stock_submit" in request.form:
+            stock_selected = request.form.get("stock_item_select")
+            quantity = request.form.get("quantity")
+            db.execute(
+                "INSERT INTO stock_container(stock_id, container_id, quantity) VALUES(?, ?, ?)",
+                (
+                    stock_selected,
+                    container_id,
+                    quantity,
+                ),
+            )
+            db.commit()
+            flash("Successfully added an existing stock item to this container.")
+
+            return redirect(f"/container_info/{container_id}")

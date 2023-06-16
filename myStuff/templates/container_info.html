@@ -6,9 +6,26 @@
         counter-reset: row-counter;
     }
 
+    ul li {
+        list-style: none;
+        padding: 5px;
+    }
+
     .counter-cell::before {
         counter-increment: row-counter;
         content: counter(row-counter);
+    }
+
+    #newStock {
+        display: none;
+    }
+
+    #addCategory {
+        display: none;
+    }
+
+    #existingStock {
+        display: none;
     }
 </style>
 {% endblock %}
@@ -38,8 +55,8 @@
             <th scope="col">Category</th>
             <th scope="col">Note</th>
             <th scope="col">Quantity</th>
+            <th scope="col">Action</th>
         </tr>
-
     </thead>
     <tbody>
         {% if container_items == {} %}
@@ -55,12 +72,150 @@
             <td>{{ item["category"] }}</td>
             <td>{{ item["note"] }}</td>
             <td>{{ item["quantity"] }}</td>
+            <td>
+                <form method="POST" action="/delete_stock/{{key}}">
+                    <button type="submit" class="btn btn-danger" onclick="confirmDeletion()">Delete</button>
+                </form>
+            </td>
         </tr>
         {% endfor %}
         {% endif %}
+
     </tbody>
 </table>
+
+<div id='newStock'>
+    <form id='stock_info' method='post' action='/add_to_container/{{container_info[0]["container_id"]}}'>
+        <div class="mb-3">
+            <label for='stock_name'>Stock name</label>
+            <input type='text' name='stock_name' placeholder='Enter stock name here' required>
+        </div>
+        <div class="mb-3">
+            <label for='note'>Note</label>
+            <input type='text' name='note' id="note" placeholder='Additional notes for the stock item'>
+        </div>
+        <div class="mb-3">
+            <label for='category_select'>Category</label>
+            <select class="form-select" name="category" id="category" aria-label='category'
+                onchange='toggleNewCategory()' required>
+                <option value="" disabled selected>Select stock category</option>
+                {% for key in categories_dict %}
+                <option value='{{key}}'>{{categories_dict[key]}}</option>
+                {% endfor %}
+                <option value='newCategory'>Add new categories</option>
+            </select>
+        </div>
+        <div class="mb-3">
+            <label for='quantity'>Quantity</label>
+            <input type='number' name='quantity' id='quantity' placeholder='Quantity'>
+        </div>
+        <button type="submit" name='new_stock_submit' class="btn btn-outline-primary">Add stock</button>
+        <div id='cancelAdding'>
+            <button onclick='cancelAddingNewItems()' class='btn btn-outline-primary'>Cancel</button>
+        </div>
+    </form>
+</div>
+
+<div id='addCategory'>
+    <p>Add new stock category</p>
+    <form id='new_cat' method='post'>
+        <div class="mb-3">
+            <label for='category_name'>New Category Name</label>
+            <input type='text' name='category_name' required>
+        </div>
+        <div class="mb-3">
+            <label for='description'>Description</label>
+            <input type='text' name='description' required>
+        </div>
+        <button type='submit' name='cat_submit' class="btn btn-outline-primary">Add new category</button>
+    </form>
+</div>
+
+<div id='existingStock'>
+    <form id='existing_stock_add' method='post' action='/add_to_container/{{container_info[0]["container_id"]}}'>
+        <div class='mb-3'>
+            <label for='stock_item_select'>Existing Stock Items</label>
+            <select class="form-select" name="stock_item_select" id="stock_item" aria-label='stock_item' required>
+                <option value="" disabled selected>Select an existing stock item</option>
+                {% for key, items in existing_stock_dict.items() %}
+                <option value='{{key}}'>{{items["stock_name"]}} Category: {{items["category_name"]}}
+                    Note:{{items["note"]}}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="mb-3">
+            <label for='quantity'>Quantity</label>
+            <input type='number' name='quantity' id='quantity' placeholder='Quantity'>
+        </div>
+        <button type="submit" name='existing_stock_submit' class="btn btn-outline-primary">Add stock</button>
+        <div id='cancelAddingExisting'>
+            <button onclick='cancelAddingExistingItems()' class='btn btn-outline-primary'>Cancel</button>
+        </div>
+    </form>
+</div>
+
+<div>
+    <ul>
+        <li>
+            <button id='add_new_btn' onclick='showAddNewItems()' class="btn btn-outline-primary">Add new
+                items to this container</button>
+        </li>
+        <li>
+            <button id='add_existing_btn' onclick='showAddExistingItems()' class="btn btn-outline-primary">Add existing
+                items to this container</button>
+        </li>
+    </ul>
+</div>
 <div>
     <p>Back to <a href='/storage_plan'>storage plan</a></p>
 </div>
+
+<script>
+    function confirmDeletion() {
+        if (confirm("Are you sure you want to delete this stock?")) {
+            let form = document.getElementById("deleteStock");
+            form.submit();
+        }
+    }
+
+    function toggleNewCategory() {
+        var categorySelect = document.getElementById("category");
+        var addCategory = document.getElementById("addCategory");
+
+        if (categorySelect.value === "newCategory") {
+            addCategory.style.display = "block";
+        } else {
+            addCategory.style.display = "none";
+        }
+    }
+
+    function showAddNewItems() {
+        let addNewForm = document.getElementById("newStock");
+        let addExistingBtn = document.getElementById("add_existing_btn");
+        addNewForm.style.display = "block";
+        addExistingBtn.style.display = "none";
+    }
+
+    function cancelAddingNewItems() {
+        let addNewForm = document.getElementById("newStock");
+        let addExistingBtn = document.getElementById("add_existing_btn");
+        addNewForm.style.display = "none";
+        addExistingBtn.style.display = "block";
+    }
+
+    function showAddExistingItems() {
+        let addExistingForm = document.getElementById("existingStock");
+        let addNewBtn = document.getElementById("add_new_btn");
+        addExistingForm.style.display = "block";
+        addNewBtn.style.display = "none";
+    }
+
+    function cancelAddingExistingItems() {
+        let addExistingForm = document.getElementById("existingStock");
+        let addNewBtn = document.getElementById("add_new_btn");
+        addExistingForm.style.display = "none";
+        addNewBtn.style.display = "block";
+    }
+
+</script>
 {% endblock %}

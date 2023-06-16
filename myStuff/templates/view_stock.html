@@ -18,7 +18,7 @@
                 <th scope="col">Quantity</th>
                 <th scope="col">Container</th>
                 <th scope="col">Location</th>
-                <th scope="col">Actions</th>
+                <th scope="col">Action</th>
             </tr>
         </thead>
         <tbody>
@@ -31,9 +31,9 @@
                 <td>{{stock["house_name"]}}->{{stock["room_name"]}}->{{stock["furniture_name"]}}
                 </td>
                 <td>
-                    <form method="POST" action="/delete_stock/{{ stock_container_id }}">
+                    <form id='deleteStock' method="POST" action="/delete_stock/{{ stock_container_id }}">
                         <button type="submit" class="btn btn-danger"
-                            onclick="confirmDeletion('{{ stock_id }}')">Delete</button>
+                            onclick="confirmDeletion()">Delete</button>
                     </form>
                 </td>
             </tr>
@@ -61,6 +61,13 @@
         }
         searchResults.innerHTML = html;
     });
+
+    function confirmDeletion() {
+        if (confirm("Are you sure you want to delete this stock?")) {
+            let form = document.getElementById("deleteStock");
+            form.submit();
+        }
+    }
 
 </script>
 {% endblock %}
