@@ -14,14 +14,6 @@
     <p> Add new stock item</p>
     <form id='stock_info' method='post'>
         <div class="mb-3">
-            <label for='stock_name'>Stock name</label>
-            <input type='text' name='stock_name' placeholder='Enter stock name here' required>
-        </div>
-        <div class="mb-3">
-            <label for='note'>Note</label>
-            <input type='text' name='note' id="note" placeholder='Additional notes for the stock item'>
-        </div>
-        <div class="mb-3">
             <label for='category_select'>Category</label>
             <select class="form-select" name="category" id="category" aria-label='category'
                 onchange='toggleNewCategory()' required>
@@ -32,43 +24,54 @@
                 <option value='newCategory'>Add new categories</option>
             </select>
         </div>
-        <div class="mb-3">
-            <label for='quantity'>Quantity</label>
-            <input type='number' name='quantity' id='quantity' placeholder='Quantity'>
+
+        <div id='addCategory'>
+            <form id='new_cat' method='post'>
+                <div class="mb-3">
+                    <label for='category_name'>New Category Name</label>
+                    <input type='text' name='category_name' required>
+                </div>
+                <div class="mb-3">
+                    <label for='description'>Description</label>
+                    <input type='text' name='description' required>
+                </div>
+                <button type='submit' name='cat_submit' class="btn btn-outline-primary">Add new category</button>
+            </form>
         </div>
-        <div class="mb-3">
-            <p>Location</p>
-            <label for='house'>House</label>
-            <select class="form-select" name='hosue' id='house' aria-label='house'>
-                <option></option>
-            </select>
-            <label for='room'>
-                Room
-            </label>
-            <select class="form-select" name="room" id="room"></select>
-            <label for='furniture'>Furniture</label>
-            <select class="form-select" name='furniture' id='furniture'></select>
-            <label for="container">Container</label>
-            <select class="form-select" name='container' id='container'></select>
+
+        <div id='addStock'>
+            <div class="mb-3">
+                <label for='stock_name'>Stock name</label>
+                <input type='text' name='stock_name' placeholder='Enter stock name here' required>
+            </div>
+            <div class="mb-3">
+                <label for='note'>Note</label>
+                <input type='text' name='note' id="note" placeholder='Additional notes for the stock item'>
+            </div>
+            <div class="mb-3">
+                <label for='quantity'>Quantity</label>
+                <input type='number' name='quantity' id='quantity' placeholder='Quantity'>
+            </div>
+            <div class="mb-3">
+                <p>Location</p>
+                <label for='house'>House</label>
+                <select class="form-select" name='hosue' id='house' aria-label='house'>
+                    <option></option>
+                </select>
+                <label for='room'>
+                    Room
+                </label>
+                <select class="form-select" name="room" id="room"></select>
+                <label for='furniture'>Furniture</label>
+                <select class="form-select" name='furniture' id='furniture'></select>
+                <label for="container">Container</label>
+                <select class="form-select" name='container' id='container'></select>
+            </div>
+            <button type="submit" name='stock_submit' class="btn btn-outline-primary">Add stock</button>
         </div>
-        <button type="submit" name='stock_submit' class="btn btn-outline-primary">Add stock</button>
     </form>
 </div>
 
-<div id='addCategory'>
-    <p>Add new stock category</p>
-    <form id='new_cat' method='post'>
-        <div class="mb-3">
-            <label for='category_name'>New Category Name</label>
-            <input type='text' name='category_name' required>
-        </div>
-        <div class="mb-3">
-            <label for='description'>Description</label>
-            <input type='text' name='description' required>
-        </div>
-        <button type='submit' name='cat_submit' class="btn btn-outline-primary">Add new category</button>
-    </form>
-</div>
 
 <p>{{message}}</p>
 </div>
@@ -84,8 +87,10 @@
         var addCategory = document.getElementById("addCategory");
 
         if (categorySelect.value === "newCategory") {
+            addStock.style.display = "none";
             addCategory.style.display = "block";
         } else {
+            addStock.style.display = "block";
             addCategory.style.display = "none";
         }
     }
