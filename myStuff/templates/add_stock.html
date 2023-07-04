@@ -24,21 +24,6 @@
                 <option value='newCategory'>Add new categories</option>
             </select>
         </div>
-
-        <div id='addCategory'>
-            <form id='new_cat' method='post'>
-                <div class="mb-3">
-                    <label for='category_name'>New Category Name</label>
-                    <input type='text' name='category_name' required>
-                </div>
-                <div class="mb-3">
-                    <label for='description'>Description</label>
-                    <input type='text' name='description' required>
-                </div>
-                <button type='submit' name='cat_submit' class="btn btn-outline-primary">Add new category</button>
-            </form>
-        </div>
-
         <div id='addStock'>
             <div class="mb-3">
                 <label for='stock_name'>Stock name</label>
@@ -70,6 +55,20 @@
             <button type="submit" name='stock_submit' class="btn btn-outline-primary">Add stock</button>
         </div>
     </form>
+
+    <div id='addCategory'>
+        <form id='new_cat' method='post'>
+            <div class="mb-3">
+                <label for='category_name'>New Category Name</label>
+                <input type='text' name='category_name' required>
+            </div>
+            <div class="mb-3">
+                <label for='description'>Description</label>
+                <input type='text' name='description' required>
+            </div>
+            <button type='submit' name='cat_submit' class="btn btn-outline-primary">Add new category</button>
+        </form>
+    </div>
 </div>
 
 
